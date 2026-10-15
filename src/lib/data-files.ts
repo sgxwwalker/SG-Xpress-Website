@@ -4,6 +4,13 @@ import path from "path";
 // Small JSON files kept next to content.json (outside the code folder on the server).
 // Paths are only known at runtime, hence the turbopackIgnore hints.
 
+/**
+ * True on hosts that can't keep files between visits (Vercel). The site still shows
+ * every page and the admin still signs in, but saving is switched off with a clear message.
+ */
+export const READ_ONLY = process.env.VERCEL === "1" || process.env.READ_ONLY_PREVIEW === "1";
+export const READ_ONLY_MESSAGE = "This is a preview copy of the website, so saving is switched off here. Make changes on the staging or live site.";
+
 export function dataPath(name: string): string {
   const content = process.env.CONTENT_FILE;
   return content ? path.join(path.dirname(content), name) : path.join(process.cwd(), "data", name);

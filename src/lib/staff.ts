@@ -92,7 +92,7 @@ export async function verifyLogin(username: string, password: string): Promise<S
   }
   if (!(await bcrypt.compare(password, rec.passwordHash))) return null;
   rec.lastLoginAt = new Date().toISOString();
-  await writeStaff(list);
+  await writeStaff(list).catch((err) => console.error("Couldn't record the login time", err));
   return { id: rec.id, name: rec.name, username: rec.username, role: "staff", pv: passwordVersion(rec.passwordHash) };
 }
 

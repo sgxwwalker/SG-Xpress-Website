@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { clientIp } from "@/lib/client-ip";
+import { READ_ONLY } from "@/lib/data-files";
 import { CONTACT_TOPICS } from "@/lib/contact";
 import { emailMessage, saveMessage } from "@/lib/messages";
 
@@ -47,6 +48,7 @@ export async function sendContactMessage(_prev: ContactState | undefined, form: 
     (["name", "email", "phone", "sgxNumber", "topic", "message"] as const).map((k) => [k, String(form.get(k) ?? "")]),
   ) as ContactState["values"];
   const ip = await clientIp();
+  if (READ_ONLY) return { error: "This is a preview copy of the website, so the form is switched off. Please WhatsApp or call us instead.", values };
 
   // Bots: pretend success so they don't retry.
   if (String(form.get("website") ?? "") !== "") return { ok: true };

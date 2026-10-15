@@ -1,4 +1,4 @@
-import { dataPath, readJson, writeJson } from "./data-files";
+import { dataPath, READ_ONLY, readJson, writeJson } from "./data-files";
 import type { AdminUser } from "./staff";
 
 // Who did what in /admin. Shown to the superadmin in the Activity tab.
@@ -27,8 +27,13 @@ export async function logActivity(user: Pick<AdminUser, "id" | "name">, action: 
     action,
     details: details.length > MAX_DETAILS ? [...details.slice(0, MAX_DETAILS), `…and ${details.length - MAX_DETAILS} more changes`] : details,
   };
-  const list = await readActivity();
-  await writeJson(file(), [entry, ...list].slice(0, KEEP));
+  if (READ_ONLY) return;
+  try {
+    const list = await readActivity();
+    await writeJson(file(), [entry, ...list].slice(0, KEEP));
+  } catch (err) {
+    console.error("Couldn't write the activity log", err); // never block a login or save over the log
+  }
 }
 
 /** The most recent save, used to tell an editor who saved before them. */

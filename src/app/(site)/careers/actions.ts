@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { clientIp } from "@/lib/client-ip";
+import { READ_ONLY } from "@/lib/data-files";
 import { checkCv, emailApplication, saveApplication } from "@/lib/applications";
 import { getContent } from "@/lib/content/store";
 
@@ -48,6 +49,7 @@ async function turnstileOk(token: string, ip: string): Promise<boolean> {
 export async function applyForJob(_prev: ApplyState | undefined, form: FormData): Promise<ApplyState> {
   const values = Object.fromEntries((["name", "email", "phone", "parish", "message"] as const).map((k) => [k, String(form.get(k) ?? "")])) as ApplyState["values"];
   const ip = await clientIp();
+  if (READ_ONLY) return { error: "This is a preview copy of the website, so applications are switched off here.", values };
 
   if (String(form.get("website") ?? "") !== "") return { ok: true }; // bot trap
   const started = Number(form.get("started") ?? 0);

@@ -6,6 +6,7 @@ import { clientIp } from "@/lib/client-ip";
 import { describeChanges, lastSave, logActivity } from "@/lib/activity";
 import { currentUser, endSession, startSession } from "@/lib/auth";
 import { contentSchema } from "@/lib/content/schema";
+import { READ_ONLY, READ_ONLY_MESSAGE } from "@/lib/data-files";
 import { contentVersion, getContent, saveContent } from "@/lib/content/store";
 import { deleteMessage as removeMessage, readMessages } from "@/lib/messages";
 import { APPLICATION_STATUSES, deleteApplication as removeApplication, setApplicationStatus, type ApplicationStatus } from "@/lib/applications";
@@ -82,6 +83,7 @@ export type SaveResult = { ok: true; savedAt: string; version: number } | { ok: 
 export async function save(input: unknown, baseVersion: number): Promise<SaveResult> {
   const user = await currentUser();
   if (!user) return { ok: false, error: "Your session has ended. Log in again." };
+  if (READ_ONLY) return { ok: false, error: READ_ONLY_MESSAGE };
 
   if ((await contentVersion()) !== baseVersion) {
     const last = await lastSave();
@@ -108,7 +110,7 @@ export async function save(input: unknown, baseVersion: number): Promise<SaveRes
 
 export async function deleteMessage(id: string): Promise<{ ok: boolean }> {
   const user = await currentUser();
-  if (!user) return { ok: false };
+  if (!user || READ_ONLY) return { ok: false };
   // Describe it from the saved copy, not from what the browser sent.
   const msg = (await readMessages()).find((m) => m.id === id);
   if (!msg) return { ok: false };
@@ -121,7 +123,7 @@ export async function deleteMessage(id: string): Promise<{ ok: boolean }> {
 
 export async function updateApplicationStatus(id: string, status: ApplicationStatus): Promise<{ ok: boolean }> {
   const user = await currentUser();
-  if (!user || !APPLICATION_STATUSES.includes(status)) return { ok: false };
+  if (!user || READ_ONLY || !APPLICATION_STATUSES.includes(status)) return { ok: false };
   const app = await setApplicationStatus(id, status);
   if (!app) return { ok: false };
   await logActivity(user, "Updated an application", [`${app.name} · ${app.jobTitle}: ${status}`]);
@@ -130,7 +132,7 @@ export async function updateApplicationStatus(id: string, status: ApplicationSta
 
 export async function deleteApplication(id: string): Promise<{ ok: boolean }> {
   const user = await currentUser();
-  if (!user) return { ok: false };
+  if (!user || READ_ONLY) return { ok: false };
   const app = await removeApplication(id);
   if (!app) return { ok: false };
   await logActivity(user, "Deleted an application", [`${app.name} · ${app.jobTitle}`]);
@@ -149,6 +151,7 @@ async function requireSuperadmin() {
 export async function addStaff(input: { name: string; username: string; password: string }): Promise<AccountResult> {
   const sa = await requireSuperadmin();
   if (!sa) return { ok: false, error: "Only the superadmin can add staff." };
+  if (READ_ONLY) return { ok: false, error: READ_ONLY_MESSAGE };
   try {
     const staff = await createStaff(input, sa);
     await logActivity(sa, "Added a staff account", [`${staff.name} (${staff.username})`]);
@@ -161,6 +164,7 @@ export async function addStaff(input: { name: string; username: string; password
 export async function manageStaff(id: string, change: { active?: boolean; password?: string; remove?: boolean }): Promise<AccountResult> {
   const sa = await requireSuperadmin();
   if (!sa) return { ok: false, error: "Only the superadmin can manage staff." };
+  if (READ_ONLY) return { ok: false, error: READ_ONLY_MESSAGE };
   try {
     const rec = await updateStaff(id, change);
     const what = change.remove ? "Removed a staff account" : change.password ? "Reset a staff password" : change.active ? "Switched a staff account on" : "Switched a staff account off";
@@ -174,6 +178,7 @@ export async function manageStaff(id: string, change: { active?: boolean; passwo
 export async function changeMyPassword(current: string, next: string): Promise<AccountResult> {
   const user = await currentUser();
   if (!user) return { ok: false, error: "Your session has ended. Log in again." };
+  if (READ_ONLY) return { ok: false, error: READ_ONLY_MESSAGE };
   if (user.role === "superadmin") {
     return { ok: false, error: `The superadmin password is set on the server. Run: npm run hash-password` };
   }
