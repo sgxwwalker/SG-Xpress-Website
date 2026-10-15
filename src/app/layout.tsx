@@ -13,9 +13,12 @@ const poppins = Poppins({
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://sgxpressja.com";
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
+// Staging copies must never show up in Google.
+const STAGING = process.env.NEXT_PUBLIC_SITE_ENV === "staging";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
+  ...(STAGING ? { robots: { index: false, follow: false } } : {}),
   title: {
     default: "SG Xpress Shipping | Ship from the USA and China to Jamaica",
     template: "%s | SG Xpress Shipping",

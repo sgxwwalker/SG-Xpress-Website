@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import { createHash } from "crypto";
 import { dataPath, readJson, writeJson } from "./data-files";
 
 // Admin accounts.
@@ -22,6 +23,20 @@ export interface StaffRecord extends AdminUser {
   createdAt: string;
   createdBy: string;
   lastLoginAt?: string;
+}
+
+/** An account plus a fingerprint of its current password, stored in the session. */
+export type SessionUser = AdminUser & { pv: string };
+
+/** Changes whenever the password changes, so older sessions stop working. */
+function passwordVersion(hash: string): string {
+  return createHash("sha256").update(hash).digest("hex").slice(0, 16);
+}
+
+function superadminHash(): string {
+  const b64 = process.env.ADMIN_PASSWORD_HASH_B64;
+  if (!b64) throw new Error("ADMIN_PASSWORD_HASH_B64 is not set. Run `npm run hash-password`.");
+  return Buffer.from(b64, "base64").toString("utf8");
 }
 
 /** Staff details safe to send to the browser (no password hash). */
@@ -59,33 +74,40 @@ export function summarise(s: StaffRecord): StaffSummary {
 }
 
 /** Checks a username + password. Returns the account, or null. */
-export async function verifyLogin(username: string, password: string): Promise<AdminUser | null> {
+// Compared against when a username doesn't exist, so a wrong username takes as long as a wrong password.
+const DUMMY_HASH = "$2b$12$CwTycUXWue0Thq9StjUM0uJ8DPLKXt1FYlwYpQW2G3cAwjKoh2WZe";
+
+export async function verifyLogin(username: string, password: string): Promise<SessionUser | null> {
   const u = normaliseUsername(username);
   const sa = superadmin();
   if (u === sa.username) {
-    const b64 = process.env.ADMIN_PASSWORD_HASH_B64;
-    if (!b64) throw new Error("ADMIN_PASSWORD_HASH_B64 is not set. Run `npm run hash-password -- \"…\"`.");
-    return (await bcrypt.compare(password, Buffer.from(b64, "base64").toString("utf8"))) ? sa : null;
+    const hash = superadminHash();
+    return (await bcrypt.compare(password, hash)) ? { ...sa, pv: passwordVersion(hash) } : null;
   }
   const list = await readStaff();
   const rec = list.find((s) => s.username === u && s.active);
-  if (!rec || !(await bcrypt.compare(password, rec.passwordHash))) return null;
+  if (!rec) {
+    await bcrypt.compare(password, DUMMY_HASH);
+    return null;
+  }
+  if (!(await bcrypt.compare(password, rec.passwordHash))) return null;
   rec.lastLoginAt = new Date().toISOString();
   await writeStaff(list);
-  return { id: rec.id, name: rec.name, username: rec.username, role: "staff" };
+  return { id: rec.id, name: rec.name, username: rec.username, role: "staff", pv: passwordVersion(rec.passwordHash) };
 }
 
 /** The current account for a session id, or null if it was removed or switched off. */
-export async function findActiveUser(id: string): Promise<AdminUser | null> {
-  if (id === SUPERADMIN_ID) return superadmin();
+export async function findActiveUser(id: string): Promise<SessionUser | null> {
+  if (id === SUPERADMIN_ID) return { ...superadmin(), pv: passwordVersion(superadminHash()) };
   const rec = (await readStaff()).find((s) => s.id === id && s.active);
-  return rec ? { id: rec.id, name: rec.name, username: rec.username, role: "staff" } : null;
+  return rec ? { id: rec.id, name: rec.name, username: rec.username, role: "staff", pv: passwordVersion(rec.passwordHash) } : null;
 }
 
 export async function createStaff(input: { name: string; username: string; password: string }, by: AdminUser): Promise<StaffSummary> {
-  const username = normaliseUsername(input.username);
+  const username = normaliseUsername(String(input.username ?? ""));
   if (!/^[a-z0-9._-]{3,30}$/.test(username)) throw new Error("Usernames are 3–30 characters: letters, numbers, dots, dashes or underscores.");
   if (username === superadmin().username) throw new Error("That username is reserved for the superadmin.");
+  if (typeof input.name !== "string" || typeof input.password !== "string") throw new Error("Fill in every field.");
   if (input.name.trim().length < 2) throw new Error("Enter the staff member's name.");
   if (input.password.length < MIN_PASSWORD) throw new Error(`Passwords need at least ${MIN_PASSWORD} characters.`);
   const list = await readStaff();
@@ -109,7 +131,7 @@ export async function updateStaff(id: string, change: { active?: boolean; passwo
   const rec = list.find((s) => s.id === id);
   if (!rec) throw new Error("That staff account no longer exists.");
   if (change.password !== undefined) {
-    if (change.password.length < MIN_PASSWORD) throw new Error(`Passwords need at least ${MIN_PASSWORD} characters.`);
+    if (typeof change.password !== "string" || change.password.length < MIN_PASSWORD) throw new Error(`Passwords need at least ${MIN_PASSWORD} characters.`);
     rec.passwordHash = await bcrypt.hash(change.password, 12);
   }
   if (change.active !== undefined) rec.active = change.active;
@@ -122,7 +144,7 @@ export async function changeOwnPassword(id: string, current: string, next: strin
   const rec = list.find((s) => s.id === id && s.active);
   if (!rec) throw new Error("Your account could not be found.");
   if (!(await bcrypt.compare(current, rec.passwordHash))) throw new Error("Your current password isn't right.");
-  if (next.length < MIN_PASSWORD) throw new Error(`Passwords need at least ${MIN_PASSWORD} characters.`);
+  if (typeof next !== "string" || next.length < MIN_PASSWORD) throw new Error(`Passwords need at least ${MIN_PASSWORD} characters.`);
   rec.passwordHash = await bcrypt.hash(next, 12);
   await writeStaff(list);
 }

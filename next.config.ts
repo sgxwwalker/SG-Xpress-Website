@@ -11,6 +11,22 @@ const nextConfig: NextConfig = {
   images: {
     formats: ["image/avif", "image/webp"],
   },
+  // Browser security headers on every page.
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Frame-Options", value: "DENY" }, // no one can embed the site (or the admin) in a frame
+          { key: "Content-Security-Policy", value: "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=()" },
+        ],
+      },
+      { source: "/admin/:path*", headers: [{ key: "Cache-Control", value: "private, no-store" }] },
+    ];
+  },
   // Keep old WordPress links (Google results, saved bookmarks) working.
   async redirects() {
     return [

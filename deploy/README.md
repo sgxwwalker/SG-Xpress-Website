@@ -1,83 +1,199 @@
-# Deploying sgxpressja.com to the dedicated server
+# Deploying the SG Xpress website
 
-Assumes a Linux server (Ubuntu 22.04/24.04) with SSH access. If the server turns
-out to be cPanel or Windows, the app is the same; only these setup steps change.
+One Linux server (Ubuntu 24.04) runs two copies of the site:
 
-## One-time server setup
+| Copy    | Address                        | Folder                          | Port |
+|---------|--------------------------------|---------------------------------|------|
+| Staging | https://staging.sgxpressja.com | /var/www/sgx-website-staging    | 3101 |
+| Live    | https://sgxpressja.com         | /var/www/sgx-website            | 3100 |
+
+Staging is password-protected and hidden from Google. It has its own content,
+staff accounts and messages, so testing there never touches the live site.
+
+---
+
+## Step 1: Get a server (you)
+
+Any provider with Ubuntu 24.04 works. A 1 GB / 1 CPU server (about US$5–6/month at
+DigitalOcean, Hetzner, Vultr or Linode) is enough for both copies.
+
+When creating it, add your computer's SSH key. If you don't have one, run this on
+your Mac and paste the printed line into the provider's "SSH key" box:
 
 ```bash
-# As root on the server
-apt update && apt install -y nginx certbot python3-certbot-nginx
+ssh-keygen -t ed25519 -C "sgx-website"
+```
+
+```bash
+cat ~/.ssh/id_ed25519.pub
+```
+
+Note the server's IP address.
+
+## Step 2: Point the staging address at it (you)
+
+Where the sgxpressja.com DNS is managed (domain registrar or Cloudflare), add:
+
+| Type | Name    | Value            | TTL |
+|------|---------|------------------|-----|
+| A    | staging | your server's IP | 300 |
+
+This leaves the current WordPress site at sgxpressja.com untouched.
+
+## Step 3: Set up the server (one time)
+
+```bash
+ssh root@YOUR-SERVER-IP
+```
+
+Then, on the server:
+
+```bash
+apt update && apt upgrade -y
+apt install -y nginx certbot python3-certbot-nginx apache2-utils ufw
 curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && apt install -y nodejs
 npm install -g pm2
 
-adduser --disabled-password deploy
-mkdir -p /var/www/sgx-website/{releases,shared/data}
-chown -R deploy:deploy /var/www/sgx-website
+# Firewall: only SSH and web traffic
+ufw allow OpenSSH && ufw allow 'Nginx Full' && ufw --force enable
+
+# A non-root user that runs the site, using the same SSH key as root
+adduser --disabled-password --gecos "" deploy
+mkdir -p /home/deploy/.ssh && cp ~/.ssh/authorized_keys /home/deploy/.ssh/
+chown -R deploy:deploy /home/deploy/.ssh
+
+mkdir -p /var/www/sgx-website-staging/{releases,shared/data}
+chown -R deploy:deploy /var/www/sgx-website-staging
 ```
 
-Copy `deploy/ecosystem.config.cjs` and `deploy/backup-content.sh` to
-`/var/www/sgx-website/`, then create `/var/www/sgx-website/shared/.env`:
+From your Mac (in the SGX Website folder), copy the helper files up:
 
 ```bash
-SUPERADMIN_USERNAME=wwalker    # the one superadmin login
-SUPERADMIN_NAME=Warren Walker  # shown in the activity log
-ADMIN_PASSWORD_HASH_B64=...    # from: npm run hash-password -- "a strong password"
-SESSION_SECRET=...             # from: openssl rand -base64 32
-CONTENT_FILE=/var/www/sgx-website/shared/data/content.json
-NEXT_PUBLIC_GA_ID=G-XXXXXXXXXX
-NEXT_PUBLIC_SITE_URL=https://sgxpressja.com
+scp deploy/ecosystem.config.cjs deploy/backup-content.sh deploy/rollback.sh deploy@YOUR-SERVER-IP:/var/www/sgx-website-staging/
 ```
 
-Optional extras in the same file: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`,
-`SMTP_FROM` and `CONTACT_TO` to email contact-form messages (they're always saved in
-/admin → Messages too), and `NEXT_PUBLIC_TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY`
-for Cloudflare's spam check. `NEXT_PUBLIC_*` values must also be in
-`deploy/production.env` because they're baked in at build time.
+```bash
+scp deploy/nginx-staging.conf root@YOUR-SERVER-IP:/etc/nginx/sites-available/staging.sgxpressja.com
+```
 
-Staff accounts (`staff.json`), the activity log (`activity.json`) and contact messages
-(`messages.json`) are saved in the same folder as `CONTENT_FILE`. Back up the whole
-`shared/data/` folder, not just content.json.
+## Step 4: Staging secrets (you, on the server)
 
-`CONTENT_FILE` sits outside the release folders, so deploys never touch what
-staff saved in /admin. Each save also keeps the last 20 versions in
-`shared/data/backups/`.
-
-Nginx and HTTPS:
+Make passwords on your Mac (they never go in git, chat or email):
 
 ```bash
-cp nginx.conf /etc/nginx/sites-available/sgxpressja.com   # from deploy/nginx.conf
-ln -s ../sites-available/sgxpressja.com /etc/nginx/sites-enabled/
+npm run hash-password    # asks for the new password without showing it
+```
+
+```bash
+openssl rand -base64 32
+```
+
+On the server, as root, create `/var/www/sgx-website-staging/shared/.env`
+(`nano /var/www/sgx-website-staging/shared/.env`):
+
+```bash
+SUPERADMIN_USERNAME=wwalker
+SUPERADMIN_NAME=Warren Walker
+ADMIN_PASSWORD_HASH_B64=...   # the line printed by hash-password
+SESSION_SECRET=...            # the openssl output
+CONTENT_FILE=/var/www/sgx-website-staging/shared/data/content.json
+NEXT_PUBLIC_SITE_ENV=staging
+NEXT_PUBLIC_SITE_URL=https://staging.sgxpressja.com
+```
+
+Then lock it down: `chown deploy:deploy` and `chmod 600` that file.
+
+Optional extras in the same file:
+- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, `CONTACT_TO` and `CAREERS_TO` email contact messages and job applications. They're always saved in /admin too.
+- `TURNSTILE_SECRET_KEY` turns on Cloudflare's spam check. It needs the site key in `deploy/staging.env` too.
+
+## Step 5: Nginx, the reviewer password and HTTPS (on the server, as root)
+
+```bash
+ln -s ../sites-available/staging.sgxpressja.com /etc/nginx/sites-enabled/
+htpasswd -c /etc/nginx/sgx-staging.htpasswd reviewer   # asks you to type a password
 nginx -t && systemctl reload nginx
-certbot --nginx -d sgxpressja.com -d www.sgxpressja.com
+certbot --nginx -d staging.sgxpressja.com
 ```
 
-Start on boot, and nightly backups:
+Anyone reviewing staging needs the `reviewer` login first (a browser pop-up), then
+the normal site. Admin staff then log in at /admin as usual.
+
+## Step 6: Deploy (from your Mac)
+
+`deploy/staging.env` already holds the staging build settings. From the SGX Website folder:
 
 ```bash
-su - deploy -c "pm2 startup"   # run the command it prints, as root
-crontab -u deploy -e           # add: 15 2 * * * /var/www/sgx-website/backup-content.sh
+SERVER=deploy@YOUR-SERVER-IP ./deploy/deploy.sh
 ```
 
-## Each deploy (from your computer)
+Then make the site start on reboot. As `deploy`, run `pm2 startup`, then run the
+command it prints as root.
 
-Put the production `NEXT_PUBLIC_*` values in `deploy/production.env` (not
-committed), then:
+Visit https://staging.sgxpressja.com. Updating it later is just the deploy command again.
+
+Optional nightly backups. Run `crontab -u deploy -e` and add:
+
+```
+15 2 * * * /var/www/sgx-website-staging/backup-content.sh
+```
+
+## What to test on staging
+
+- Every page on a phone and a computer, and every link and button: Register, Login, WhatsApp, call, maps, app stores.
+- Calculator: Air and Ocean, several weights and item values.
+- Admin:
+  - log in as wwalker
+  - change a rate and save, then check the Rates page and calculator
+  - add a staff account and log in as them
+  - check the Activity log
+- Contact form: send a message, then check that it appears in /admin → Messages.
+- Careers: add a test job in admin, apply with a PDF CV, then open the CV in /admin → Applications.
+- Delete test messages, applications, jobs and staff when done.
+
+---
+
+## Going live later (same server)
+
+1. Create `/var/www/sgx-website/{releases,shared/data}` and copy in `ecosystem.config.cjs`, `backup-content.sh` and `rollback.sh`. The live `.env` is the same as staging with:
+   - `CONTENT_FILE=/var/www/sgx-website/shared/data/content.json`
+   - `NEXT_PUBLIC_SITE_ENV=production`
+   - `NEXT_PUBLIC_SITE_URL=https://sgxpressja.com`
+   - its own new `SESSION_SECRET`
+2. Optionally copy the content you approved on staging: `cp /var/www/sgx-website-staging/shared/data/content.json /var/www/sgx-website/shared/data/`.
+3. Install `deploy/nginx.conf` as `/etc/nginx/sites-available/sgxpressja.com` and enable it.
+4. Copy `deploy/production.env.example` to `deploy/production.env`, add the GA4 ID, then deploy:
+
+   ```bash
+   SERVER=deploy@YOUR-SERVER-IP TARGET=production ./deploy/deploy.sh
+   ```
+
+5. A day before, lower the DNS TTL for sgxpressja.com to 300. Then point the `@` and `www` A records at the server.
+6. Run `certbot --nginx -d sgxpressja.com -d www.sgxpressja.com`.
+7. Keep the WordPress site for a week as a fallback.
+
+Old WordPress links (`/terms-and-conditions/`, `/about-us/`…) redirect to the new pages
+(see `next.config.ts`).
+
+## Rollback and restore
+
+**Undo a bad deploy** (on the server, as `deploy`):
 
 ```bash
-SERVER=deploy@your-server-ip ./deploy/deploy.sh
+/var/www/sgx-website/rollback.sh                    # back to the previous release
+/var/www/sgx-website/rollback.sh 20261015-0930      # or a named one from releases/
 ```
 
-Rollback: point `current` at the previous folder in `releases/` and run
-`pm2 reload sgx-website`.
+Saved content, staff, messages and CVs live in `shared/data`, so a rollback never touches them.
 
-## Going live
+**Undo a bad admin save:** each save keeps the previous version in `shared/data/backups/`.
+Copy the one you want over `shared/data/content.json`. No restart is needed; pages read it on the next visit.
 
-1. Deploy and test on the server's IP or a staging subdomain first.
-2. A day before, lower the DNS TTL for sgxpressja.com to 300 seconds.
-3. Point the `A` records for `sgxpressja.com` and `www` at the new server.
-4. Run certbot (above) once DNS has switched.
-5. Keep the WordPress site for a week as a fallback.
+**Restore everything** (content, staff, messages, applications, CVs) from a nightly archive:
 
-Old WordPress links (`/calculator/`, `/terms-and-conditions/`, `/about-us/`…)
-redirect permanently to the new pages; see `next.config.ts`.
+```bash
+tar -xzf /var/backups/sgx-website/data-YYYYMMDD.tgz -C /var/www/sgx-website/shared/data
+```
+
+Also copy `/var/backups/` off the server now and then (or turn on your provider's
+server backups), so a lost server doesn't take the backups with it.

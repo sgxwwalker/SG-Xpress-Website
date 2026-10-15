@@ -1,12 +1,12 @@
 "use server";
 
-import { headers } from "next/headers";
 import { z } from "zod";
+import { clientIp } from "@/lib/client-ip";
 import { checkCv, emailApplication, saveApplication } from "@/lib/applications";
 import { getContent } from "@/lib/content/store";
 
 const schema = z.object({
-  name: z.string().trim().min(2, "Please enter your full name.").max(100),
+  name: z.string().trim().min(2, "Please enter your full name.").max(100).regex(/^[^\r\n]*$/, "Please enter your name on one line."),
   email: z.string().trim().email("Please enter a valid email address.").max(200),
   phone: z.string().trim().min(7, "Please enter a phone number we can reach you on.").max(40),
   parish: z.string().trim().max(60),
@@ -26,6 +26,9 @@ export type ApplyState = {
 const recent = new Map<string, number[]>();
 const LIMIT = 3;
 const WINDOW_MS = 30 * 60 * 1000;
+// Site-wide ceiling, so a flood from many addresses can't fill the disk with CVs.
+const allRecent: number[] = [];
+const SITE_LIMIT_PER_HOUR = 30;
 
 async function turnstileOk(token: string, ip: string): Promise<boolean> {
   const secret = process.env.TURNSTILE_SECRET_KEY;
@@ -44,8 +47,7 @@ async function turnstileOk(token: string, ip: string): Promise<boolean> {
 
 export async function applyForJob(_prev: ApplyState | undefined, form: FormData): Promise<ApplyState> {
   const values = Object.fromEntries((["name", "email", "phone", "parish", "message"] as const).map((k) => [k, String(form.get(k) ?? "")])) as ApplyState["values"];
-  const h = await headers();
-  const ip = h.get("x-forwarded-for")?.split(",")[0].trim() || h.get("x-real-ip") || "unknown";
+  const ip = await clientIp();
 
   if (String(form.get("website") ?? "") !== "") return { ok: true }; // bot trap
   const started = Number(form.get("started") ?? 0);
@@ -54,6 +56,8 @@ export async function applyForJob(_prev: ApplyState | undefined, form: FormData)
   const now = Date.now();
   const times = (recent.get(ip) ?? []).filter((t) => now - t < WINDOW_MS);
   if (times.length >= LIMIT) return { error: "You've sent several applications already. Please try again later.", values };
+  while (allRecent.length && now - allRecent[0] > 60 * 60 * 1000) allRecent.shift();
+  if (allRecent.length >= SITE_LIMIT_PER_HOUR) return { error: "We're receiving a lot of applications right now. Please try again in an hour.", values };
   if (!(await turnstileOk(String(form.get("cf-turnstile-response") ?? ""), ip))) {
     return { error: "Please complete the security check and try again.", values };
   }
@@ -94,6 +98,7 @@ export async function applyForJob(_prev: ApplyState | undefined, form: FormData)
 
   times.push(now);
   recent.set(ip, times);
+  allRecent.push(now);
   const { consent: _consent, ...details } = parsed.data; // eslint-disable-line @typescript-eslint/no-unused-vars
   const saved = await saveApplication({ ...details, jobId, jobTitle }, { fileName: (file as File).name, bytes: cvBytes! });
   await emailApplication(saved, cvBytes!);

@@ -5,6 +5,11 @@ import { IconChat, IconInfo } from "@/components/Icons";
 import { getContent } from "@/lib/content/store";
 import { whatsappUrl } from "@/lib/site";
 
+// Read the saved content on every visit. Pages built ahead of time would show the
+// content from build time (on the developer's computer) after each deploy, not what
+// staff saved in /admin. content.json is small, so this costs almost nothing.
+export const dynamic = "force-dynamic";
+
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
   const content = await getContent();
   const { notice } = content;

@@ -26,6 +26,7 @@ npm-debug.log*
 *.tsbuildinfo
 next-env.d.ts
 deploy/production.env
+deploy/staging.env
 
 # Local Claude design skills (kept on this computer only)
 /.claude/skills/

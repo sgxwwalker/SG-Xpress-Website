@@ -1,15 +1,15 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { clientIp } from "@/lib/client-ip";
 import { describeChanges, lastSave, logActivity } from "@/lib/activity";
 import { currentUser, endSession, startSession } from "@/lib/auth";
 import { contentSchema } from "@/lib/content/schema";
 import { contentVersion, getContent, saveContent } from "@/lib/content/store";
-import { deleteMessage as removeMessage } from "@/lib/messages";
+import { deleteMessage as removeMessage, readMessages } from "@/lib/messages";
 import { APPLICATION_STATUSES, deleteApplication as removeApplication, setApplicationStatus, type ApplicationStatus } from "@/lib/applications";
-import { changeOwnPassword as setOwnPassword, createStaff, summarise, updateStaff, verifyLogin, type StaffSummary } from "@/lib/staff";
+import { changeOwnPassword as setOwnPassword, createStaff, findActiveUser, summarise, updateStaff, verifyLogin, type StaffSummary } from "@/lib/staff";
 
 // ---- Logging in ----
 
@@ -28,8 +28,7 @@ function recentFailures(key: string): number[] {
 export async function login(_prev: { error?: string } | undefined, formData: FormData): Promise<{ error?: string }> {
   const username = String(formData.get("username") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
-  const h = await headers();
-  const ip = h.get("x-forwarded-for")?.split(",")[0].trim() || h.get("x-real-ip") || "unknown";
+  const ip = await clientIp();
   const keys = [`u:${username}`, `ip:${ip}`];
 
   if (keys.some((k) => recentFailures(k).length >= LOCK_AFTER)) {
@@ -107,11 +106,14 @@ export async function save(input: unknown, baseVersion: number): Promise<SaveRes
   return { ok: true, savedAt: new Date().toISOString(), version: await contentVersion() };
 }
 
-export async function deleteMessage(id: string, summary: string): Promise<{ ok: boolean }> {
+export async function deleteMessage(id: string): Promise<{ ok: boolean }> {
   const user = await currentUser();
   if (!user) return { ok: false };
+  // Describe it from the saved copy, not from what the browser sent.
+  const msg = (await readMessages()).find((m) => m.id === id);
+  if (!msg) return { ok: false };
   await removeMessage(id);
-  await logActivity(user, "Deleted a message", [summary]);
+  await logActivity(user, "Deleted a message", [`${msg.name} (${msg.email}): ${msg.message.slice(0, 80)}`]);
   return { ok: true };
 }
 
@@ -173,10 +175,13 @@ export async function changeMyPassword(current: string, next: string): Promise<A
   const user = await currentUser();
   if (!user) return { ok: false, error: "Your session has ended. Log in again." };
   if (user.role === "superadmin") {
-    return { ok: false, error: `The superadmin password is set on the server. Run: npm run hash-password -- "new password"` };
+    return { ok: false, error: `The superadmin password is set on the server. Run: npm run hash-password` };
   }
   try {
     await setOwnPassword(user.id, current, next);
+    // The change ends every other session; keep this one signed in.
+    const fresh = await findActiveUser(user.id);
+    if (fresh) await startSession(fresh);
     await logActivity(user, "Changed their password");
     return { ok: true };
   } catch (e) {

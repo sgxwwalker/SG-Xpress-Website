@@ -1,6 +1,7 @@
 import { promises as fs } from "fs";
 import path from "path";
 import { cache } from "react";
+import type { z } from "zod";
 import { contentSchema, type SiteContent } from "./schema";
 import { defaultContent } from "./defaults";
 
@@ -21,13 +22,32 @@ export const getContent = cache(async (): Promise<SiteContent> => {
   } catch {
     return defaultContent; // nothing saved yet
   }
-  const parsed = contentSchema.safeParse(JSON.parse(raw));
-  if (!parsed.success) {
-    // A hand-edited or corrupted file must never take the public site down.
-    console.error("content.json is invalid; serving defaults instead", parsed.error.issues);
+  let json: unknown;
+  try {
+    json = JSON.parse(raw);
+  } catch {
+    console.error("content.json is not valid JSON; serving defaults. Restore it from shared/data/backups/.");
     return defaultContent;
   }
-  return parsed.data;
+  const parsed = contentSchema.safeParse(json);
+  if (parsed.success) return parsed.data;
+
+  // A hand-edited file, or a stricter rule added later, must never take the site down
+  // or hide every saved edit: keep each valid section, use the default only for the bad one.
+  const saved = (json && typeof json === "object" ? json : {}) as Record<string, unknown>;
+  const merged: Record<string, unknown> = {};
+  const bad: string[] = [];
+  for (const [key, field] of Object.entries(contentSchema.shape)) {
+    const one = (field as z.ZodType).safeParse(saved[key]);
+    if (one.success) merged[key] = one.data;
+    else {
+      merged[key] = defaultContent[key as keyof SiteContent];
+      bad.push(key);
+    }
+  }
+  console.error(`content.json: invalid section(s) ${bad.join(", ")}; using defaults for those only`, parsed.error.issues.slice(0, 5));
+  const recheck = contentSchema.safeParse(merged);
+  return recheck.success ? recheck.data : defaultContent;
 });
 
 /** Validates and saves content atomically, keeping timestamped backups of earlier versions. */

@@ -22,7 +22,7 @@ export function AccountPanel({ user }: { user: AdminUser }) {
 
       {user.role === "superadmin" ? (
         <p className="text-sm">
-          The superadmin password is set on the server, not here. To change it, run <code className="rounded bg-mist px-1">npm run hash-password -- &quot;new password&quot;</code> and
+          The superadmin password is set on the server, not here. To change it, run <code className="rounded bg-mist px-1">npm run hash-password</code> and
           update <code className="rounded bg-mist px-1">ADMIN_PASSWORD_HASH_B64</code> in the server settings.
         </p>
       ) : (

@@ -1,12 +1,12 @@
 "use server";
 
-import { headers } from "next/headers";
 import { z } from "zod";
+import { clientIp } from "@/lib/client-ip";
 import { CONTACT_TOPICS } from "@/lib/contact";
 import { emailMessage, saveMessage } from "@/lib/messages";
 
 const schema = z.object({
-  name: z.string().trim().min(2, "Please enter your name.").max(100),
+  name: z.string().trim().min(2, "Please enter your name.").max(100).regex(/^[^\r\n]*$/, "Please enter your name on one line."),
   email: z.string().trim().email("Please enter a valid email address.").max(200),
   phone: z.string().trim().max(40),
   sgxNumber: z.string().trim().max(40),
@@ -22,6 +22,9 @@ export type ContactState = { ok?: boolean; error?: string; fieldErrors?: Partial
 const recent = new Map<string, number[]>();
 const LIMIT = 5;
 const WINDOW_MS = 10 * 60 * 1000;
+// Site-wide ceiling, so a flood from many addresses can't bury real messages.
+const allRecent: number[] = [];
+const SITE_LIMIT_PER_HOUR = 100;
 
 async function turnstileOk(token: string, ip: string): Promise<boolean> {
   const secret = process.env.TURNSTILE_SECRET_KEY;
@@ -43,8 +46,7 @@ export async function sendContactMessage(_prev: ContactState | undefined, form: 
   const values = Object.fromEntries(
     (["name", "email", "phone", "sgxNumber", "topic", "message"] as const).map((k) => [k, String(form.get(k) ?? "")]),
   ) as ContactState["values"];
-  const h = await headers();
-  const ip = h.get("x-forwarded-for")?.split(",")[0].trim() || h.get("x-real-ip") || "unknown";
+  const ip = await clientIp();
 
   // Bots: pretend success so they don't retry.
   if (String(form.get("website") ?? "") !== "") return { ok: true };
@@ -54,6 +56,8 @@ export async function sendContactMessage(_prev: ContactState | undefined, form: 
   const now = Date.now();
   const times = (recent.get(ip) ?? []).filter((t) => now - t < WINDOW_MS);
   if (times.length >= LIMIT) return { error: "You've sent several messages already. Please WhatsApp or call us instead.", values };
+  while (allRecent.length && now - allRecent[0] > 60 * 60 * 1000) allRecent.shift();
+  if (allRecent.length >= SITE_LIMIT_PER_HOUR) return { error: "We're receiving a lot of messages right now. Please WhatsApp or call us instead.", values };
 
   if (!(await turnstileOk(String(form.get("cf-turnstile-response") ?? ""), ip))) {
     return { error: "Please complete the security check and try again.", values };
@@ -78,6 +82,7 @@ export async function sendContactMessage(_prev: ContactState | undefined, form: 
 
   times.push(now);
   recent.set(ip, times);
+  allRecent.push(now);
   const saved = await saveMessage(parsed.data);
   await emailMessage(saved);
   return { ok: true };

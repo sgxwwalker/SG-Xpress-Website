@@ -268,7 +268,7 @@ export function AdminEditor({
                       className="h-10 rounded-lg px-3 text-sm font-semibold text-red-700"
                       onClick={async () => {
                         if (!confirm(`Delete the message from ${m.name}?`)) return;
-                        const res = await deleteMessage(m.id, `${m.name} (${m.email}): ${m.message.slice(0, 80)}`);
+                        const res = await deleteMessage(m.id);
                         if (res.ok) setMessages((list) => list.filter((x) => x.id !== m.id));
                       }}
                     >

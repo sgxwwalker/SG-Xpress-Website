@@ -5,6 +5,8 @@ import { z } from "zod";
 const money = z.number().min(0).max(10_000_000);
 const shortText = z.string().trim().max(200);
 const longText = z.string().trim().max(2000);
+// Links staff enter must be ordinary web addresses (never javascript: or data:).
+const webUrl = z.string().trim().max(600).url().refine((u) => /^https?:\/\//i.test(u), "Links must start with https://");
 
 export const addressFieldSchema = z.object({
   label: shortText.min(1),
@@ -14,7 +16,7 @@ export const addressFieldSchema = z.object({
 export const branchSchema = z.object({
   name: shortText.min(1),
   address: shortText.min(1),
-  mapsUrl: z.string().trim().url().max(600),
+  mapsUrl: webUrl,
   phone: shortText.min(1),
 });
 
@@ -51,7 +53,11 @@ export const contentSchema = z.object({
     enabled: z.boolean(),
     text: shortText,
     linkLabel: shortText,
-    linkHref: shortText,
+    // A page on this site ("/faqs") or a full https:// address.
+    linkHref: shortText.refine(
+      (v) => v === "" || /^\/(?!\/)/.test(v) || (/^https?:\/\//i.test(v) && URL.canParse(v)),
+      "The link must be a page on this site (e.g. /faqs) or start with https://",
+    ),
   }),
   // airRates[0] is the 0.1–0.5 lb rate; airRates[n] is the n lb rate, n = 1..50.
   airRates: z
@@ -128,10 +134,10 @@ export const contentSchema = z.object({
   // Social profile links; leave one blank to hide its icon.
   socials: z
     .object({
-      facebook: z.union([z.literal(""), z.string().trim().url()]),
-      instagram: z.union([z.literal(""), z.string().trim().url()]),
-      x: z.union([z.literal(""), z.string().trim().url()]),
-      tiktok: z.union([z.literal(""), z.string().trim().url()]),
+      facebook: z.union([z.literal(""), webUrl]),
+      instagram: z.union([z.literal(""), webUrl]),
+      x: z.union([z.literal(""), webUrl]),
+      tiktok: z.union([z.literal(""), webUrl]),
     })
     .default({ facebook: "https://facebook.com/sgxpressja", instagram: "https://instagram.com/sgxpressja/", x: "https://x.com/sgxpressja", tiktok: "https://www.tiktok.com/@sgxpressja" }),
   faqs: z.array(faqSchema).max(80),
