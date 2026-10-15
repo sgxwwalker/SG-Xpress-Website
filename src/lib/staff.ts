@@ -34,9 +34,16 @@ function passwordVersion(hash: string): string {
 }
 
 function superadminHash(): string {
-  const b64 = process.env.ADMIN_PASSWORD_HASH_B64;
-  if (!b64) throw new Error("ADMIN_PASSWORD_HASH_B64 is not set. Run `npm run hash-password`.");
-  return Buffer.from(b64, "base64").toString("utf8");
+  // Forgive common copy-paste slips in hosting dashboards: surrounding spaces or quotes,
+  // the whole "ADMIN_PASSWORD_HASH_B64=…" line pasted as the value, or a plain bcrypt hash.
+  const value = (process.env.ADMIN_PASSWORD_HASH_B64 ?? "")
+    .trim()
+    .replace(/^ADMIN_PASSWORD_HASH_B64=/, "")
+    .replace(/^["']|["']$/g, "")
+    .trim();
+  if (!value) throw new Error("ADMIN_PASSWORD_HASH_B64 is not set. Run `npm run hash-password`.");
+  if (value.startsWith("$2")) return value;
+  return Buffer.from(value, "base64").toString("utf8");
 }
 
 /** Staff details safe to send to the browser (no password hash). */
