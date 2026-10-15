@@ -6,10 +6,12 @@ import { SocialLinks } from "@/components/SocialLinks";
 import { H2, Section } from "@/components/ui";
 import { getContent } from "@/lib/content/store";
 import { telHref, whatsappUrl } from "@/lib/site";
+import { businessData, JsonLd } from "@/components/StructuredData";
 
 export const metadata: Metadata = {
-  title: "Contact",
-  description: "Call, WhatsApp, email or send SG Xpress a message. Visit our Church Street and Miriam Way (Clock) branches in Montego Bay.",
+  title: "Contact Us, Phone, WhatsApp & Branches",
+  description: "Call, WhatsApp, email or send SG Xpress a message, or visit our Church Street and Clock branches.",
+  alternates: { canonical: "/contact" },
 };
 
 /** "(876) 879-4816" → "18768794816" for wa.me links. */
@@ -34,10 +36,13 @@ function ContactRow({ icon, label, children }: { icon: React.ReactNode; label: s
   );
 }
 
-function NumberActions({ display, tel, wa, where }: { display: string; tel: string; wa: string; where: string }) {
+function NumberActions({ display, tel, wa, where, label }: { display: string; tel: string; wa: string; where: string; label?: string }) {
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-      <span className="text-lg font-semibold text-white">{display}</span>
+      <span className="text-lg font-semibold text-white">
+        {label ? <span className="block text-sm font-medium text-on-navy">{label}</span> : null}
+        {display}
+      </span>
       <span className="flex gap-1.5">
         <a href={tel} data-track="call_click" data-track-location={where} className="flex h-9 items-center gap-1 rounded-lg bg-white/10 px-3 text-sm font-semibold text-white hover:bg-white/20">
           <IconPhone className="h-3.5 w-3.5" /> Call
@@ -56,6 +61,7 @@ export default async function ContactPage() {
 
   return (
     <>
+      <JsonLd data={businessData(c)} />
       <section className="bg-mist py-8 md:py-14">
         <div className="mx-auto max-w-6xl px-4 md:px-6">
           <div className="grid overflow-hidden rounded-3xl bg-white shadow-xl shadow-navy-deep/10 lg:grid-cols-[400px_1fr]">
@@ -67,9 +73,12 @@ export default async function ContactPage() {
 
               <ContactRow icon={<IconPhone className="h-5 w-5" />} label="Call or WhatsApp">
                 <div className="flex flex-col gap-3">
-                  {c.contact.phones.map((p) => (
-                    <NumberActions key={p} display={p} tel={telHref(p)} wa={whatsappUrl(waDigits(p))} where="contact-main" />
-                  ))}
+                  {c.contact.phones.map((p) => {
+                    // Label each number with the branch it belongs to (e.g. Church Street, Clock Mobay).
+                    const branch = c.branches.find((b) => waDigits(b.phone) === waDigits(p));
+                    const label = branch ? branch.contactLabel || branch.name : undefined;
+                    return <NumberActions key={p} display={p} label={label} tel={telHref(p)} wa={whatsappUrl(waDigits(p))} where="contact-main" />;
+                  })}
                 </div>
               </ContactRow>
 

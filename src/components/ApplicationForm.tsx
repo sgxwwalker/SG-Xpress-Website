@@ -1,12 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import Script from "next/script";
 import { useActionState, useEffect, useRef } from "react";
 import { applyForJob, type ApplyState } from "@/app/(site)/careers/actions";
 import { track } from "./Analytics";
+import { Turnstile } from "./Turnstile";
 
-const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 const PARISHES = [
   "Kingston", "St. Andrew", "St. Thomas", "Portland", "St. Mary", "St. Ann", "Trelawny",
   "St. James", "Hanover", "Westmoreland", "St. Elizabeth", "Manchester", "Clarendon", "St. Catherine",
@@ -100,12 +99,7 @@ export function ApplicationForm({ jobId, jobTitle }: { jobId: string; jobTitle: 
       </div>
       <input ref={startedRef} type="hidden" name="started" defaultValue="" />
 
-      {TURNSTILE_SITE_KEY ? (
-        <>
-          <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer />
-          <div className="cf-turnstile" data-sitekey={TURNSTILE_SITE_KEY} />
-        </>
-      ) : null}
+      <Turnstile resetKey={state} />
 
       {state?.error ? <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-800">{state.error}</p> : null}
 

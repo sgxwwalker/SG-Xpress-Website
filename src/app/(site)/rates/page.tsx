@@ -8,8 +8,9 @@ import { flightDays, jmd, usd } from "@/lib/rates";
 import { REGISTER_URL, whatsappUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Shipping rates",
+  title: "Air & Ocean Shipping Rates to Jamaica",
   description: "USA Air rates by weight, processing fees, USA Ocean, China Direct and barrel shipping prices in Jamaican dollars.",
+  alternates: { canonical: "/rates" },
 };
 
 const JUMP = [

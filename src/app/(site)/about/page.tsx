@@ -7,8 +7,9 @@ import { getContent } from "@/lib/content/store";
 import { REGISTER_URL, whatsappUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "About us",
-  description: "SG Xpress Shipping is a Montego Bay company offering express courier, freight forwarding, and air and ocean cargo, with delivery islandwide.",
+  title: "About Us, Courier & Freight in Jamaica",
+  description: "SG Xpress Shipping offers express courier, freight forwarding, and air and ocean cargo, with delivery islandwide.",
+  alternates: { canonical: "/about" },
 };
 
 const WHAT_WE_DO = [
@@ -34,7 +35,7 @@ export default async function AboutPage() {
         <div className="mx-auto flex max-w-6xl flex-col gap-5 px-4 py-8 md:px-6 md:py-14">
           <h1 className="text-[31px] font-extrabold leading-tight md:text-5xl">Shipping built around you</h1>
           <p className="max-w-2xl text-lg text-on-navy">
-            SG Xpress Shipping is a Montego Bay company offering express courier, freight forwarding, and air and ocean cargo, with delivery islandwide.
+            SG Xpress Shipping offers express courier, freight forwarding, and air and ocean cargo, with delivery islandwide.
           </p>
         </div>
       </section>

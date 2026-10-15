@@ -5,8 +5,9 @@ import { Button, H2, IconTile, Section } from "@/components/ui";
 import { getContent } from "@/lib/content/store";
 
 export const metadata: Metadata = {
-  title: "Careers",
+  title: "Careers in Shipping & Logistics, Jamaica",
   description: "Join the SG Xpress Shipping team in Jamaica. See current openings and apply online.",
+  alternates: { canonical: "/careers" },
 };
 
 const VALUES = [

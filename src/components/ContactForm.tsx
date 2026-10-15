@@ -1,12 +1,11 @@
 "use client";
 
-import Script from "next/script";
 import { useActionState, useEffect, useRef } from "react";
 import { sendContactMessage, type ContactState } from "@/app/(site)/contact/actions";
 import { CONTACT_TOPICS } from "@/lib/contact";
 import { track } from "./Analytics";
+import { Turnstile } from "./Turnstile";
 
-const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 const inputCls =
   "w-full rounded-xl border-2 border-line bg-white px-4 text-base text-navy placeholder:text-[#8a94a8] focus:border-navy focus:outline-none aria-[invalid=true]:border-red-600";
@@ -76,12 +75,7 @@ export function ContactForm() {
       </div>
       <input ref={startedRef} type="hidden" name="started" defaultValue="" />
 
-      {TURNSTILE_SITE_KEY ? (
-        <>
-          <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer />
-          <div className="cf-turnstile" data-sitekey={TURNSTILE_SITE_KEY} />
-        </>
-      ) : null}
+      <Turnstile resetKey={state} />
 
       {state?.error ? <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-800">{state.error}</p> : null}
 

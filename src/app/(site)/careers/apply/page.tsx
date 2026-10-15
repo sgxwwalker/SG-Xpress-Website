@@ -6,6 +6,7 @@ import { Section } from "@/components/ui";
 export const metadata: Metadata = {
   title: "General application | Careers",
   description: "Send SG Xpress your CV for future openings.",
+  alternates: { canonical: "/careers/apply" },
 };
 
 export default function GeneralApplicationPage() {

@@ -104,7 +104,7 @@ NEXT_PUBLIC_SITE_URL=https://staging.sgxpressja.com
 Then lock it down: `chown deploy:deploy` and `chmod 600` that file.
 
 Optional extras in the same file:
-- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, `CONTACT_TO` and `CAREERS_TO` email contact messages and job applications. They're always saved in /admin too.
+- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, `CONTACT_TO` and `CAREERS_TO` email contact messages and job applications. They're always saved in /admin too. With the current email host: `SMTP_HOST=mail.sgxpressja.com`, `SMTP_PORT=465`, and a mailbox such as `website@sgxpressja.com` created in cPanel.
 - `TURNSTILE_SECRET_KEY` turns on Cloudflare's spam check. It needs the site key in `deploy/staging.env` too.
 
 ## Step 5: Nginx, the reviewer password and HTTPS (on the server, as root)
@@ -168,9 +168,14 @@ Optional nightly backups. Run `crontab -u deploy -e` and add:
    SERVER=deploy@YOUR-SERVER-IP TARGET=production ./deploy/deploy.sh
    ```
 
-5. A day before, lower the DNS TTL for sgxpressja.com to 300. Then point the `@` and `www` A records at the server.
-6. Run `certbot --nginx -d sgxpressja.com -d www.sgxpressja.com`.
-7. Keep the WordPress site for a week as a fallback.
+5. **Protect email first.** Email for sgxpressja.com is hosted on the old WordPress server (199.85.208.169), and the MX record points at `sgxpressja.com` itself, so moving the website would move email too. At least a day before switching:
+   - change `mail.sgxpressja.com` from a CNAME to an **A record** → `199.85.208.169`
+   - change the **MX** record to `mail.sgxpressja.com`
+   - keep the old hosting account active for email
+   - send a test email to info@sgxpressja.com afterwards
+6. A day before, lower the DNS TTL for sgxpressja.com to 300. Then point the `@` and `www` A records at the server.
+7. Run `certbot --nginx -d sgxpressja.com -d www.sgxpressja.com`.
+8. Keep the WordPress site for a week as a fallback.
 
 Old WordPress links (`/terms-and-conditions/`, `/about-us/`…) redirect to the new pages
 (see `next.config.ts`).

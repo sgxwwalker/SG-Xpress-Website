@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { AppLinks } from "@/components/AppLinks";
@@ -8,6 +9,11 @@ import { Button, H2, IconTile, Section } from "@/components/ui";
 import { getContent } from "@/lib/content/store";
 import { flightDays } from "@/lib/rates";
 import { LOGIN_URL, REGISTER_URL, whatsappUrl } from "@/lib/site";
+import { businessData, JsonLd } from "@/components/StructuredData";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 export default async function HomePage() {
   const c = await getContent();
@@ -20,6 +26,7 @@ export default async function HomePage() {
 
   return (
     <>
+      <JsonLd data={businessData(c)} />
       {/* Opening */}
       <section className="bg-navy text-white">
         <div className="mx-auto grid max-w-6xl items-center gap-8 px-4 py-8 md:px-6 md:py-16 lg:grid-cols-2">

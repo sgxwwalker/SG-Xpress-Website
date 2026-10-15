@@ -6,10 +6,12 @@ import { H2, Section } from "@/components/ui";
 import { getContent } from "@/lib/content/store";
 import { FAQ_CATEGORIES } from "@/lib/content/schema";
 import { telHref, whatsappUrl } from "@/lib/site";
+import { faqData, JsonLd } from "@/components/StructuredData";
 
 export const metadata: Metadata = {
-  title: "Frequently asked questions",
+  title: "Shipping FAQs, USA & China to Jamaica",
   description: "Answers about getting started, shipping and tracking, invoices and customs, pickup and payments, and China and ocean shipping.",
+  alternates: { canonical: "/faqs" },
 };
 
 function formatWhatsapp(n: string): string {
@@ -21,6 +23,7 @@ export default async function FaqsPage() {
 
   return (
     <>
+      <JsonLd data={faqData(c.faqs)} />
       <section className="bg-navy text-white">
         <div className="mx-auto max-w-6xl px-4 pb-10 pt-10 text-center md:px-6 md:pb-14 md:pt-16">
           <h1 className="text-3xl font-extrabold uppercase leading-tight md:text-5xl">

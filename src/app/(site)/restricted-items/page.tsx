@@ -5,8 +5,9 @@ import { getContent } from "@/lib/content/store";
 import { whatsappUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Restricted items",
+  title: "Restricted Items for Import into Jamaica",
   description: "Items that need a permit to import into Jamaica, and which agency issues it.",
+  alternates: { canonical: "/restricted-items" },
 };
 
 // From the Jamaica Customs Agency "Restricted Items" brochure previously on sgxpressja.com.

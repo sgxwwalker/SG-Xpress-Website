@@ -5,7 +5,8 @@ import { TERMS_MD } from "@/content/terms";
 
 export const metadata: Metadata = {
   title: "Terms and conditions",
-  description: "Terms and conditions of SG Xpress Jamaica Limited.",
+  description: "Terms and conditions for shipping with SG Xpress Jamaica Limited: invoices, customs, storage, claims and more.",
+  alternates: { canonical: "/terms" },
 };
 
 export default function TermsPage() {

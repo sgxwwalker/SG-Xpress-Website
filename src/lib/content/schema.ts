@@ -18,6 +18,7 @@ export const branchSchema = z.object({
   address: shortText.min(1),
   mapsUrl: webUrl,
   phone: shortText.min(1),
+  contactLabel: shortText.default(""), // short name shown next to its number on the Contact page
 });
 
 export const faqSchema = z.object({
@@ -82,11 +83,12 @@ export const contentSchema = z.object({
   // SG Xpress Service Charge: items valued over the threshold pay percent% of the full value, in J$.
   serviceCharge: z
     .object({
-      percent: z.number().min(0).max(100),
+      percent: z.number().min(0).max(100), // USA Air
+      oceanPercent: z.number().min(0).max(100).default(20), // USA Ocean
       thresholdUsd: money,
       jmdPerUsd: z.number().min(1).max(10_000),
     })
-    .default({ percent: 35, thresholdUsd: 100, jmdPerUsd: 165 }),
+    .default({ percent: 35, oceanPercent: 20, thresholdUsd: 100, jmdPerUsd: 165 }),
   usaAir: z.object({
     transit: shortText.min(1),
     // Weekly schedule; "flight" days also feed the "Flights Tue, Thu & Sun" lines across the site.

@@ -8,8 +8,9 @@ import { getContent } from "@/lib/content/store";
 import { REGISTER_URL, whatsappUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "China Direct",
+  title: "Ship from China to Jamaica, China Direct",
   description: "Ship from China to Jamaica by air or sea, including dangerous goods. Our China warehouse addresses and how it works.",
+  alternates: { canonical: "/china-direct" },
 };
 
 export default async function ChinaDirectPage() {

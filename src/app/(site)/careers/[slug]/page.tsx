@@ -11,7 +11,7 @@ type Props = { params: Promise<{ slug: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const job = (await getContent()).jobs.find((j) => j.id === slug);
-  return job ? { title: `${job.title} | Careers`, description: job.summary } : { title: "Careers" };
+  return job ? { title: `${job.title} | Careers`, description: job.summary, alternates: { canonical: `/careers/${job.id}` } } : { title: "Careers" };
 }
 
 function niceDate(iso: string) {

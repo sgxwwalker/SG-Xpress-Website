@@ -12,16 +12,16 @@ const poppins = Poppins({
 });
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://sgxpressja.com";
-const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
-// Staging copies must never show up in Google.
+// Staging copies must never show up in Google, or count in Google Analytics.
 const STAGING = process.env.NEXT_PUBLIC_SITE_ENV === "staging";
+const GA_ID = STAGING ? undefined : process.env.NEXT_PUBLIC_GA_ID;
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   ...(STAGING ? { robots: { index: false, follow: false } } : {}),
   title: {
-    default: "SG Xpress Shipping | Ship from the USA and China to Jamaica",
-    template: "%s | SG Xpress Shipping",
+    default: "Courier & Shipping to Jamaica from USA & China | SG Xpress",
+    template: "%s | SG Xpress",
   },
   description:
     "Free US address, air from the USA three times a week, ocean freight, China Direct and barrels. Pick up at our branches or get islandwide delivery.",

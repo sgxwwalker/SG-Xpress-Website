@@ -6,8 +6,9 @@ import { getContent } from "@/lib/content/store";
 import { REGISTER_URL, whatsappUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Shipping cost calculator",
+  title: "Shipping Cost Calculator, USA to Jamaica",
   description: "Know the cost before you ship. Estimate USA Air or Ocean shipping to Jamaica, with shipping, fees and service charge shown separately.",
+  alternates: { canonical: "/calculator" },
 };
 
 export default async function CalculatorPage() {

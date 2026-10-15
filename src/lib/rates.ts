@@ -10,7 +10,8 @@ export interface ProcessingFees {
 }
 
 export interface ServiceChargeRule {
-  percent: number; // e.g. 35
+  percent: number; // USA Air, e.g. 35
+  oceanPercent: number; // USA Ocean, e.g. 20
   thresholdUsd: number; // charged only when the item value is OVER this
   jmdPerUsd: number; // exchange rate used for the charge and for US$ freight
 }
@@ -36,10 +37,14 @@ export function processingFee(billed: number, fees: ProcessingFees): number {
   return billed < 10 ? fees.under10 : fees.from10;
 }
 
-/** SG Xpress Service Charge in J$: percent of the FULL item value, only when the value is over the threshold. */
-export function serviceChargeJmd(valueUsd: number, rule: ServiceChargeRule): number {
+/**
+ * SG Xpress Service Charge in J$: a percentage of the FULL item value (air and ocean each
+ * have their own), only when the value is over the threshold.
+ */
+export function serviceChargeJmd(valueUsd: number, rule: ServiceChargeRule, mode: "air" | "ocean" = "air"): number {
   if (!(valueUsd > rule.thresholdUsd)) return 0;
-  return Math.round(valueUsd * (rule.percent / 100) * rule.jmdPerUsd);
+  const percent = mode === "ocean" ? rule.oceanPercent : rule.percent;
+  return Math.round(valueUsd * (percent / 100) * rule.jmdPerUsd);
 }
 
 export interface AirQuote {
@@ -73,7 +78,7 @@ export interface OceanQuote {
 /** Ocean: whole cubic feet × US$ rate converted to J$; under the limit, J$ per lb on whole pounds. */
 export function quoteOcean(cuft: number, weightLb: number, valueUsd: number, ocean: OceanRule, rule: ServiceChargeRule): OceanQuote | null {
   if (!(cuft > 0)) return null;
-  const serviceCharge = serviceChargeJmd(valueUsd, rule);
+  const serviceCharge = serviceChargeJmd(valueUsd, rule, "ocean");
   if (cuft < ocean.smallUnderCubicFeet) {
     if (!(weightLb > 0)) return null;
     const billedLb = Math.max(1, Math.ceil(Number(weightLb.toFixed(4))));

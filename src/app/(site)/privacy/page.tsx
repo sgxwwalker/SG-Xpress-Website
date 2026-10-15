@@ -7,6 +7,7 @@ import { PRIVACY_LAST_UPDATED, PRIVACY_MD } from "@/content/privacy";
 export const metadata: Metadata = {
   title: "Privacy",
   description: "What personal information SG Xpress collects, how we use and share it, and your rights under Jamaica's Data Protection Act.",
+  alternates: { canonical: "/privacy" },
 };
 
 export default function PrivacyPage() {

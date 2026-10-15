@@ -24,7 +24,7 @@ export const defaultContent: SiteContent = {
     storageFreeDays: 7,
     auctionDays: 30,
   },
-  serviceCharge: { percent: 35, thresholdUsd: 100, jmdPerUsd: 165 },
+  serviceCharge: { percent: 35, oceanPercent: 20, thresholdUsd: 100, jmdPerUsd: 165 },
   usaAir: {
     transit: "48–72 hrs",
     schedule: [
@@ -52,12 +52,14 @@ export const defaultContent: SiteContent = {
   branches: [
     {
       name: "Church Street",
+      contactLabel: "Church Street",
       address: "28 Church Street, Montego Bay",
       mapsUrl: "https://www.google.com/maps/place/SG+Xpress+Shipping/@18.4731559,-77.9228369,17z/data=!3m1!4b1!4m6!3m5!1s0x8eda2b3aa58d263b:0x1675f31d2629a3d7!8m2!3d18.4731559!4d-77.920262!16s%2Fg%2F11l_f6v65c",
       phone: "(876) 879-4816",
     },
     {
       name: "Miriam Way (Clock)",
+      contactLabel: "Clock Mobay",
       address: "26 Miriam Way, Montego Bay",
       mapsUrl: "https://www.google.com/maps/place/SG+Xpress+Shipping+(Clock+Branch)/@18.4651739,-77.9167586,17z/data=!3m1!4b1!4m6!3m5!1s0x8eda2b0035c8f891:0xc70f9c0aefa4a9fb!8m2!3d18.4651739!4d-77.9141837!16s%2Fg%2F11yyyf867t",
       phone: "(876) 826-4818",
@@ -139,9 +141,9 @@ export const defaultContent: SiteContent = {
     dg: [
       MARK,
       { label: "Entrance No. / 入仓号", value: "MS-5089" },
-      { label: "Address (English)", value: "A18 Yundong Garden, No. 333 South Baiyun Avenue, Baiyun District, Guangzhou, China" },
-      { label: "Address (Chinese) / 收货地址", value: "广州市白云区白云大道南333号云东花园A18" },
-      { label: "Contact: Zhou / 周生", value: "+86 135 2783 9367 / +86 185 2051 3890" },
+      { label: "Address (English)", value: "No. 9, Gaodun Industrial Zone, Beisha Village, Lishui Town, Nanhai District, Foshan City, Guangdong Province, China" },
+      { label: "Address (Chinese) / 收货地址", value: "佛山市南海区里水镇北沙村高墩工业区9号" },
+      { label: "Contact: Mr Hu / 周生", value: "+86 189 2421 5825 / +86 139 2883 9182" },
     ],
   },
 };

@@ -9,7 +9,7 @@ type Key = "air" | "sea" | "dg";
 const TABS: { key: Key; label: string; image: string; alt: string }[] = [
   { key: "air", label: "Air", image: "/images/label-air-2026-10.jpg", alt: "China Air Warehouse shipping label template" },
   { key: "sea", label: "Sea", image: "/images/label-sea-2026-10.jpg", alt: "China Sea Warehouse shipping label template" },
-  { key: "dg", label: "Dangerous", image: "/images/label-dg-2026-10b.jpg", alt: "Dangerous Goods warehouse shipping label template" },
+  { key: "dg", label: "Dangerous", image: "/images/label-dg-2026-10c.jpg", alt: "Dangerous Goods warehouse shipping label template" },
 ];
 
 export function ChinaAddresses({ warehouses }: { warehouses: Record<Key, Field[]> }) {

@@ -371,16 +371,17 @@ export function AdminEditor({
             <section className={`${card} flex flex-col gap-4`}>
               <div>
                 <h2 className="text-xl font-bold">SG Xpress Service Charge</h2>
-                <p className="text-sm text-muted">Charged on air and ocean shipments when the item value is over the threshold. Import duty is never shown on the website.</p>
+                <p className="text-sm text-muted">A percentage of the item value, charged when the value is over the threshold. Air and ocean each have their own percentage. Import duty is never shown on the website.</p>
               </div>
-              <div className="grid gap-4 md:grid-cols-3">
-                <Field label="Percentage of item value (%)"><NumberInput value={c.serviceCharge.percent} onChange={(n) => edit((d) => { d.serviceCharge.percent = n; })} /></Field>
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field label="USA Air: % of item value"><NumberInput value={c.serviceCharge.percent} onChange={(n) => edit((d) => { d.serviceCharge.percent = n; })} /></Field>
+                <Field label="USA Ocean: % of item value"><NumberInput value={c.serviceCharge.oceanPercent} onChange={(n) => edit((d) => { d.serviceCharge.oceanPercent = n; })} /></Field>
                 <Field label="Applies to items over (US$)"><NumberInput value={c.serviceCharge.thresholdUsd} onChange={(n) => edit((d) => { d.serviceCharge.thresholdUsd = n; })} /></Field>
                 <Field label="Exchange rate (J$ per US$1)" hint="Also converts ocean freight to J$."><NumberInput value={c.serviceCharge.jmdPerUsd} onChange={(n) => edit((d) => { d.serviceCharge.jmdPerUsd = n; })} /></Field>
               </div>
               <p className="rounded-xl bg-mist px-3 py-2 text-sm">
-                Example: a US$200 item →{" "}
-                <strong>{jmd(serviceChargeJmd(200, c.serviceCharge))}</strong>
+                Example, a US$200 item: air <strong>{jmd(serviceChargeJmd(200, c.serviceCharge, "air"))}</strong>, ocean{" "}
+                <strong>{jmd(serviceChargeJmd(200, c.serviceCharge, "ocean"))}</strong>
                 {200 > c.serviceCharge.thresholdUsd ? "" : " (below the threshold)"}
               </p>
             </section>
@@ -441,6 +442,7 @@ export function AdminEditor({
                 <div className="grid gap-4 md:grid-cols-2">
                   <Field label="Name"><input className={input} value={b.name} onChange={(e) => edit((d) => { d.branches[i].name = e.target.value; })} /></Field>
                   <Field label="Phone"><input className={input} value={b.phone} onChange={(e) => edit((d) => { d.branches[i].phone = e.target.value; })} /></Field>
+                  <Field label="Contact page label" hint="Shown above this branch's number on the Contact page, e.g. Clock Mobay"><input className={input} value={b.contactLabel} onChange={(e) => edit((d) => { d.branches[i].contactLabel = e.target.value; })} /></Field>
                   <Field label="Address"><input className={input} value={b.address} onChange={(e) => edit((d) => { d.branches[i].address = e.target.value; })} /></Field>
                   <Field label="Google Maps link" hint="Open the branch in Google Maps, tap Share, copy the link and paste it here">
                     <input className={input} type="url" value={b.mapsUrl} onChange={(e) => edit((d) => { d.branches[i].mapsUrl = e.target.value; })} />
@@ -448,7 +450,7 @@ export function AdminEditor({
                 </div>
               </section>
             ))}
-            <button type="button" className="h-11 rounded-xl border-2 border-dashed border-line font-semibold" onClick={() => edit((d) => { d.branches.push({ name: "New branch", address: "", mapsUrl: "", phone: d.contact.phones[0] }); })}>
+            <button type="button" className="h-11 rounded-xl border-2 border-dashed border-line font-semibold" onClick={() => edit((d) => { d.branches.push({ name: "New branch", address: "", mapsUrl: "", phone: d.contact.phones[0], contactLabel: "" }); })}>
               + Add a branch
             </button>
             <section className={`${card} flex flex-col gap-4`}>
