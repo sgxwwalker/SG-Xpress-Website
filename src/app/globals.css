@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+/* SG Xpress brand, matched to the official logo. */
+@theme {
+  --color-navy: #1d3361;
+  --color-navy-deep: #14244a;
+  --color-navy-soft: #2a447a;
+  --color-gold: #fdcb06;
+  --color-gold-soft: #fff4d1;
+  --color-gold-text: #8a6400;
+  --color-mist: #f2f4f8;
+  --color-line: #dde2ec;
+  --color-muted: #4a5670;
+  --color-on-navy: #d6dde9;
+  --color-whatsapp: #1a7f45;
+  --font-sans: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 80px;
+}
+
+body {
+  background: #ffffff;
+  color: var(--color-navy);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Native <details> FAQ accordions: hide the default marker, show +/− */
+details > summary {
+  list-style: none;
+}
+details > summary::-webkit-details-marker {
+  display: none;
+}
+details[open] .faq-sign {
+  transform: rotate(45deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
