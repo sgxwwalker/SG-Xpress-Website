@@ -39,14 +39,18 @@ export const jobSchema = z.object({
     .trim()
     .regex(/^[a-z0-9-]{3,80}$/, "Job link must be lower-case letters, numbers and dashes")
     .refine((id) => id !== "apply", "“apply” can't be used as a job link"),
-  title: shortText.min(2),
-  department: shortText.min(1),
-  location: shortText.min(1),
+  title: z.string().trim().min(2, "Job title: enter the job title.").max(120, "Job title: keep it under 120 characters."),
+  department: z.string().trim().min(1, "Department: fill this in.").max(120, "Department: keep it under 120 characters."),
+  location: z.string().trim().min(1, "Location: fill this in.").max(120, "Location: keep it under 120 characters."),
   type: z.enum(JOB_TYPES),
-  summary: z.string().trim().min(1).max(300),
-  about: longText,
-  responsibilities: z.array(shortText.min(1)).max(30),
-  requirements: z.array(shortText.min(1)).max(30),
+  summary: z
+    .string()
+    .trim()
+    .min(1, "Short summary: add one or two sentences about the role.")
+    .max(300, "Short summary: keep it to 300 characters (one or two sentences). Put the details in “About the role”."),
+  about: z.string().trim().max(6000, "About the role: keep it under 6,000 characters."),
+  responsibilities: z.array(z.string().trim().min(1).max(400, "Responsibilities: each line must be under 400 characters.")).max(40, "Responsibilities: up to 40 lines."),
+  requirements: z.array(z.string().trim().min(1).max(400, "Requirements: each line must be under 400 characters.")).max(40, "Requirements: up to 40 lines."),
   closingDate: z.union([z.literal(""), z.string().regex(/^\d{4}-\d{2}-\d{2}$/)]),
   postedAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   open: z.boolean(),

@@ -9,7 +9,7 @@ import { defaultContent } from "./defaults";
 // Staff edits live in one JSON file on the server. On the server, set CONTENT_FILE
 // to a path outside the app folder so a redeploy never overwrites it. The path is
 // only known at runtime, hence the turbopackIgnore hints on each fs call.
-const BACKUPS_TO_KEEP = 20;
+const BACKUPS_TO_KEEP = 50;
 
 function contentFile(): string {
   return process.env.CONTENT_FILE || path.join(process.cwd(), "data", "content.json");
@@ -97,7 +97,7 @@ export async function contentVersion(): Promise<number> {
   }
 }
 
-// ---- Version history (the last 20 versions, kept automatically on every save) ----
+// ---- Version history (the last 50 versions, kept automatically on every save) ----
 
 const BACKUP_NAME = /^content-(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z)\.json$/;
 

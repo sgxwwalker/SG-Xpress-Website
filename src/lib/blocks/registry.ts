@@ -154,6 +154,20 @@ export const BLOCKS = {
       ] },
     ],
   },
+  stats: {
+    name: "Numbers band",
+    description: "Big numbers with labels, e.g. 3 Locations · 1,000+ Customers, with an optional background photo.",
+    group: "Text & pictures",
+    tone: "navy",
+    fields: [
+      { kind: "text", key: "heading", label: "Heading (left side)", max: 80 },
+      { kind: "list", key: "items", label: "Numbers", itemLabel: "Number", max: 6, fields: [
+        { kind: "text", key: "value", label: "Number", max: 20, hint: "e.g. 1,000+ or 48 hrs" },
+        { kind: "text", key: "label", label: "Label", max: 60, hint: "e.g. Customers" },
+      ] },
+      { kind: "image", key: "image", label: "Background photo (optional)", hint: "Shown faintly behind the numbers." },
+    ],
+  },
   note: {
     name: "Important notice",
     description: "A yellow warning box for something customers must know.",

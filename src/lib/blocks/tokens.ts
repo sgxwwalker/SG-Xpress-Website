@@ -5,6 +5,8 @@ import { flightDays, jmd } from "@/lib/rates";
 // in from the rates and settings, so the text stays right when those settings change.
 
 export const TOKENS: { token: string; label: string; value: (c: SiteContent) => string }[] = [
+  { token: "{branch count}", label: "Number of branches (updates when you add one)", value: (c) => String(c.branches.length) },
+  { token: "{flights per week}", label: "USA air flights per week (from the schedule)", value: (c) => String(c.usaAir.schedule.length) },
   { token: "{flight days}", label: "USA air flight days (e.g. Tue, Thu & Sun)", value: (c) => flightDays(c.usaAir.schedule) },
   { token: "{air transit}", label: "USA air transit time", value: (c) => c.usaAir.transit },
   { token: "{ocean transit}", label: "USA ocean transit time", value: (c) => c.ocean.transit },

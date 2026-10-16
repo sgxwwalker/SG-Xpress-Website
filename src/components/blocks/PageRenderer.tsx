@@ -1,7 +1,7 @@
 import type { BlockType } from "@/lib/blocks/registry";
 import type { SiteContent } from "@/lib/content/schema";
 import type { Page } from "@/lib/content/pages-schema";
-import { Banner, Cards, Cta, Faqs, Hero, ImageText, JumpLinks, Note, Picture1, Steps, Table, Text, Tiles } from "./basic";
+import { Banner, Cards, Cta, Faqs, Hero, ImageText, JumpLinks, Note, Picture1, Stats, Steps, Table, Text, Tiles } from "./basic";
 import {
   AirRates, AirScheduleBlock, BranchCardsBlock, BranchLinks, Calculator, ChinaAddressesBlock, ChinaOptions, ChinaRates,
   ContactPanel, FaqExplorerBlock, FeesTables, HelpContacts, Jobs, OceanRates, WarehouseHoursBlock,
@@ -20,6 +20,7 @@ const RENDER: Record<BlockType, (props: BlockProps<any>) => React.ReactNode> = {
   text: Text,
   image: Picture1,
   banner: Banner,
+  stats: Stats,
   note: Note,
   cta: Cta,
   tiles: Tiles,

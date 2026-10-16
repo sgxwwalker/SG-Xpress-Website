@@ -5,6 +5,7 @@ import { clientIp } from "@/lib/client-ip";
 import { READ_ONLY } from "@/lib/data-files";
 import { checkCv, emailApplication, saveApplication } from "@/lib/applications";
 import { getContent } from "@/lib/content/store";
+import { isJobOpen } from "@/lib/jobs";
 
 const schema = z.object({
   name: z.string().trim().min(2, "Please enter your full name.").max(100).regex(/^[^\r\n]*$/, "Please enter your name on one line."),
@@ -69,7 +70,7 @@ export async function applyForJob(_prev: ApplyState | undefined, form: FormData)
   let jobTitle = "General application";
   if (jobId) {
     const job = (await getContent()).jobs.find((j) => j.id === jobId);
-    if (!job || !job.open) return { error: "Sorry, this position is no longer open. You can still send a general application.", values };
+    if (!job || !isJobOpen(job)) return { error: "Sorry, this position is no longer open. You can still send a general application.", values };
     jobTitle = job.title;
   }
 

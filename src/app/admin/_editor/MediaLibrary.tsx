@@ -7,6 +7,7 @@ import type { ImageValue } from "@/lib/blocks/fields";
 import type { LibraryImage } from "@/lib/media";
 import { deleteMediaItem, setMediaAlt, uploadMedia } from "../actions";
 import { inputCls } from "./FieldEditors";
+import { Pager, usePager } from "./ListTools";
 
 // The media library: upload pictures, describe them, delete unused ones, and pick one
 // for a section. Uploaded pictures are listed first, then the ones the site came with.
@@ -60,10 +61,17 @@ function Uploader({ onUploaded }: { onUploaded: (img: LibraryImage) => void }) {
 }
 
 function Grid({ images, onChoose, selectedSrc }: { images: LibraryImage[]; onChoose: (img: LibraryImage) => void; selectedSrc?: string }) {
+  const [query, setQuery] = useState("");
+  const matches = query.trim() ? images.filter((i) => `${i.name} ${i.alt}`.toLowerCase().includes(query.trim().toLowerCase())) : images;
+  const pager = usePager(matches, 24);
   if (!images.length) return <p className="text-sm text-muted">No pictures yet.</p>;
   return (
+    <div className="flex flex-col gap-3">
+      {images.length > 12 ? (
+        <input type="search" className={inputCls} placeholder="Search by file name or description…" value={query} onChange={(e) => { setQuery(e.target.value); pager.setPage(1); }} aria-label="Search pictures" />
+      ) : null}
     <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-      {images.map((img) => (
+      {pager.items.map((img) => (
         <li key={img.src}>
           <button
             type="button"
@@ -78,6 +86,8 @@ function Grid({ images, onChoose, selectedSrc }: { images: LibraryImage[]; onCho
         </li>
       ))}
     </ul>
+      <Pager page={pager.page} pages={pager.pages} onChange={pager.setPage} total={matches.length} perPage={24} label="pictures" />
+    </div>
   );
 }
 

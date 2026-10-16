@@ -358,3 +358,32 @@ export function Faqs({ p, c, id, anchor, tone }: BlockProps<{ heading: string; s
     </Section>
   );
 }
+
+// ---- Numbers band ----
+export function Stats({ p, c, anchor, tone }: BlockProps<{ heading: string; items: { value: string; label: string }[]; image: ImageValue }>) {
+  const dark = tone === "navy";
+  const bg = { white: "bg-white text-navy", mist: "bg-mist text-navy", navy: "bg-navy text-white", gold: "bg-gold text-navy" }[tone];
+  return (
+    <section id={anchor} className={`relative overflow-hidden ${bg}`}>
+      {p.image.src ? (
+        <>
+          <Picture image={p.image} sizes="100vw" className="absolute inset-0 h-full w-full object-cover" />
+          <span aria-hidden="true" className={`absolute inset-0 ${dark ? "bg-navy/85" : "bg-white/85"}`} />
+        </>
+      ) : null}
+      <div className={`relative mx-auto grid max-w-6xl items-center gap-8 px-4 py-10 md:px-6 md:py-14 ${p.heading ? "md:grid-cols-[minmax(0,260px)_1fr]" : ""}`}>
+        {p.heading ? (
+          <h2 className={`text-3xl font-extrabold leading-tight md:border-r md:pr-8 md:text-4xl ${dark ? "md:border-white/20" : "md:border-line"}`}>{fill(p.heading, c)}</h2>
+        ) : null}
+        <dl className="flex flex-wrap justify-center gap-y-8 text-center">
+          {p.items.map((x, i) => (
+            <div key={i} className={`flex flex-col-reverse items-center gap-1 px-3 ${p.items.length > 1 ? "w-1/2 sm:w-auto sm:flex-1" : "w-full"}`}>
+              <dt className={`text-xs font-semibold uppercase tracking-[0.15em] md:text-sm ${dark ? "text-on-navy" : "text-muted"}`}>{fill(x.label, c)}</dt>
+              <dd className={`text-4xl font-extrabold leading-none md:text-6xl ${dark ? "text-gold" : "text-navy"}`}>{fill(x.value, c)}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+    </section>
+  );
+}

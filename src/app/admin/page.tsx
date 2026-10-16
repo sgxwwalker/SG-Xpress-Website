@@ -43,7 +43,7 @@ export default async function AdminPage() {
       messages={messages}
       applications={applications}
       staff={staff.map(summarise)}
-      activity={isSuper ? activity.slice(0, 300) : []}
+      activity={isSuper ? activity : []}
       images={[...uploads.map(toLibraryImage), ...builtin]}
       versions={versions}
       readOnly={READ_ONLY}

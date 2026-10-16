@@ -5,6 +5,7 @@ import { ApplicationForm } from "@/components/ApplicationForm";
 import { IconClock, IconPin, IconTag } from "@/components/Icons";
 import { Button, Section } from "@/components/ui";
 import { getContent } from "@/lib/content/store";
+import { isJobOpen } from "@/lib/jobs";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -67,7 +68,7 @@ export default async function JobPage({ params }: Props) {
 
           <aside id="apply" className="lg:sticky lg:top-28 lg:self-start">
             <div className="rounded-2xl border border-line bg-white p-5 shadow-sm md:p-6">
-              {job.open ? (
+              {isJobOpen(job) ? (
                 <>
                   <h2 className="mb-1 text-2xl font-extrabold">Apply for this role</h2>
                   <p className="mb-5 text-sm text-muted">Takes about 3 minutes. Have your CV ready.</p>

@@ -79,8 +79,22 @@ const SECTION_NAMES: Record<string, string> = {
   socials: "Social links",
 };
 
+/** Turns the validator's technical wording into plain English. */
+function plain(message: string, path: PropertyKey[]): string {
+  const field = [...path].reverse().find((p) => typeof p === "string");
+  const name = field ? String(field).replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase() : "a field";
+  const tooLong = message.match(/Too big: expected string to have <=\s*(\d+) characters/);
+  if (tooLong) return `the ${name} is too long. Keep it to ${tooLong[1]} characters or fewer.`;
+  const tooShort = message.match(/Too small: expected string to have >=\s*(\d+) characters?/);
+  if (tooShort) return `the ${name} is empty. Please fill it in.`;
+  const tooMany = message.match(/Too big: expected array to have <=\s*(\d+) items/);
+  if (tooMany) return `too many items in ${name}. The most allowed is ${tooMany[1]}.`;
+  return message;
+}
+
 /** "Pages › Home › section 3 (Cards): Every button needs a label." */
-function friendlyError(issue: { path: PropertyKey[]; message: string }, input: unknown): string {
+function friendlyError(raw: { path: PropertyKey[]; message: string }, input: unknown): string {
+  const issue = { ...raw, message: plain(raw.message, raw.path) };
   const [top, pageIndex, part, sectionIndex] = issue.path;
   if (top === "pages" && typeof pageIndex === "number") {
     const page = (input as { pages?: { name?: string; sections?: { type?: string }[] }[] }).pages?.[pageIndex];
@@ -90,6 +104,10 @@ function friendlyError(issue: { path: PropertyKey[]; message: string }, input: u
       where += ` › section ${sectionIndex + 1}${type && BLOCKS[type] ? ` (${BLOCKS[type].name})` : ""}`;
     }
     return `${where}: ${issue.message}`;
+  }
+  if (top === "jobs" && typeof pageIndex === "number") {
+    const job = (input as { jobs?: { title?: string }[] }).jobs?.[pageIndex];
+    return `Careers › ${job?.title?.trim() || `job ${pageIndex + 1}`}: ${issue.message}`;
   }
   return `${SECTION_NAMES[String(top)] ?? String(top)}: ${issue.message}`;
 }

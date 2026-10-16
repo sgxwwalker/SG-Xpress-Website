@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { LOGIN_URL, NAV, REGISTER_URL } from "@/lib/site";
 import { IconClose, IconMenu } from "./Icons";
+import { isCurrent } from "./MainNav";
 
 export function MobileMenu() {
   const [open, setOpen] = useState(false);
@@ -44,8 +45,8 @@ export function MobileMenu() {
                   <Link
                     href={item.href}
                     onClick={() => setOpen(false)}
-                    aria-current={pathname === item.href ? "page" : undefined}
-                    className="flex min-h-14 items-center text-lg font-semibold aria-[current=page]:text-gold-text"
+                    aria-current={isCurrent(pathname ?? "/", item.href) ? "page" : undefined}
+                    className="flex min-h-14 items-center gap-3 text-lg font-semibold aria-[current=page]:text-gold-text aria-[current=page]:before:h-6 aria-[current=page]:before:w-1 aria-[current=page]:before:rounded-full aria-[current=page]:before:bg-gold aria-[current=page]:before:content-['']"
                   >
                     {item.label}
                   </Link>

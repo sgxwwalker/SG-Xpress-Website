@@ -16,6 +16,7 @@ import { SocialLinks } from "../SocialLinks";
 import { Button, H2, Section } from "../ui";
 import { FAQ_CATEGORY_LIST } from "@/lib/blocks/faq-categories";
 import { LinkButton, MaybeLink, muted, Picture, TextLink, type BlockProps } from "./shared";
+import { isJobOpen } from "@/lib/jobs";
 
 // The "Live information" sections: their numbers and lists come from the admin settings,
 // and their headings and labels from the page editor.
@@ -384,7 +385,7 @@ export function ContactPanel({ p, c, anchor, tone }: BlockProps<{ heading: strin
 }
 
 export function Jobs({ p, c, anchor, tone }: BlockProps<{ heading: string; emptyTitle: string; emptyText: string; moreHeading: string; moreText: string; applyLabel: string; moreButton: string }>) {
-  const open = c.jobs.filter((j) => j.open).sort((a, b) => b.postedAt.localeCompare(a.postedAt));
+  const open = c.jobs.filter((j) => isJobOpen(j)).sort((a, b) => b.postedAt.localeCompare(a.postedAt));
   return (
     <>
       <Section id={anchor} tone={tone}>

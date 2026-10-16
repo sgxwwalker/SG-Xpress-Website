@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { BUILTIN_PAGES, isBuiltin, type Page } from "@/lib/content/pages-schema";
 import { getContent } from "@/lib/content/store";
+import { isJobOpen } from "@/lib/jobs";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://sgxpressja.com";
 
@@ -12,7 +13,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const paths = [
     ...BUILTIN_PAGES.map((p) => p.path),
     ...(c.pages as Page[]).filter((p) => !isBuiltin(p.id) && p.published).map((p) => `/${p.slug}`),
-    ...c.jobs.filter((j) => j.open).map((j) => `/careers/${j.id}`),
+    ...c.jobs.filter((j) => isJobOpen(j)).map((j) => `/careers/${j.id}`),
   ];
   return paths.map((path) => ({
     url: `${SITE_URL}${path === "/" ? "" : path}`,

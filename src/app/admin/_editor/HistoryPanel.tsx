@@ -2,8 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { restoreVersion } from "../actions";
+import { Pager, usePager } from "./ListTools";
 
-// /admin → Version history: every save keeps the version it replaced (the last 20).
+// /admin → Version history: every save keeps the version it replaced (the last 50).
 // Restoring one puts the whole website content back as it was, and is itself undoable.
 
 export type VersionInfo = { file: string; replacedAt: string; savedBy: string | null; savedAt: string | null; replacedBy: string | null };
@@ -13,6 +14,7 @@ const when = (iso: string) => new Date(iso).toLocaleString(undefined, { dateStyl
 export function HistoryPanel({ versions, dirty, readOnly }: { versions: VersionInfo[]; dirty: boolean; readOnly: boolean }) {
   const [message, setMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
   const [pending, start] = useTransition();
+  const pager = usePager(versions, 10);
 
   function restore(v: VersionInfo) {
     if (dirty && !confirm("You have unsaved changes. Restoring will discard them. Continue?")) return;
@@ -29,13 +31,14 @@ export function HistoryPanel({ versions, dirty, readOnly }: { versions: VersionI
   return (
     <div className="flex flex-col gap-4">
       <p className="text-sm text-muted">
-        Each time someone saves, the version before it is kept here (the last 20). Restoring brings back everything as it was then: pages, rates, FAQs and settings.
+        Each time someone saves, the version before it is kept here (the last 50). Restoring brings back everything as it was then: pages, rates, FAQs and settings.
         Messages, applications and staff accounts are not affected.
       </p>
       {message ? <p role="status" className={`rounded-lg px-3 py-2 text-sm ${message.kind === "ok" ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"}`}>{message.text}</p> : null}
+      <Pager page={pager.page} pages={pager.pages} onChange={pager.setPage} total={versions.length} perPage={10} label="versions" />
       {versions.length ? (
         <ul className="flex flex-col gap-2">
-          {versions.map((v, i) => (
+          {pager.items.map((v, k) => { const i = pager.start + k; return (
             <li key={v.file} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line bg-white p-3 md:p-4">
               <div className="text-sm">
                 <p className="font-semibold">{v.savedAt ? `Saved ${when(v.savedAt)}` : "The website's starting version"}{v.savedBy ? ` by ${v.savedBy}` : ""}</p>
@@ -50,7 +53,7 @@ export function HistoryPanel({ versions, dirty, readOnly }: { versions: VersionI
                 Restore this version
               </button>
             </li>
-          ))}
+          ); })}
         </ul>
       ) : (
         <p className="rounded-2xl border border-line bg-white p-4 text-sm text-muted">No earlier versions yet. They appear here after the first save.</p>

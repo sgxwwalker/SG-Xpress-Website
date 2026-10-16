@@ -32,6 +32,14 @@ export function defaultPages(): Page[] {
         image: AIR_IMG,
         hideImageOnPhone: true,
       }],
+      ["stats", {
+        items: [
+          { value: "{flights per week}×", label: "Flights a week" },
+          { value: "{branch count}", label: "Locations" },
+          { value: "1.2+", label: "Million packages shipped" },
+          { value: "$0", label: "To sign up" },
+        ],
+      }, { tone: "mist" }],
       ["steps", {
         heading: "Four steps to your door",
         items: [
@@ -59,7 +67,6 @@ export function defaultPages(): Page[] {
         appBadges: true,
         image: img("/images/try-the-app.jpg", "Try out the SG Xpress app: track your packages, check rates, pay for packages, schedule pickups and manage your account", 706, 900),
       }, { tone: "gold" }],
-      ["branchCards", { heading: "Two branches in Montego Bay" }, { anchor: "locations" }],
       ["faq", { heading: "Quick answers", source: "featured", limit: 6, moreLink: page("/faqs"), moreLabel: "All FAQs & restricted items" }],
       ["cta", { heading: "Ready to shop the USA and China?", text: SIGN_UP_CTA_TEXT, buttons: [SIGN_UP], footnote: "Popular stores: Amazon · Shein · Walmart · eBay · Temu · Best Buy" }],
     ]),
@@ -228,14 +235,6 @@ export function defaultPages(): Page[] {
         highlight: "with us",
         text: "We're always looking for friendly, reliable people who care about getting customers' packages home.",
         buttons: [btn("See current openings", page("#openings"), "gold"), btn("Send a general application", page("/careers/apply"), "outline-light")],
-      }],
-      ["cards", {
-        cardStyle: "filled",
-        items: [
-          card({ icon: "arrow", title: "Learn and grow", text: "Build real skills in logistics, customs and customer service, and grow with the business." }),
-          card({ icon: "users", title: "Work as one team", text: "A close team across our branches, warehouses and China Direct desk, helping each other get it right." }),
-          card({ icon: "globe", title: "Connect Jamaica to the world", text: "Help customers shop the USA and China and get their packages home." }),
-        ],
       }],
       ["jobs", {
         heading: "Current openings",

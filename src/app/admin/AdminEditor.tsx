@@ -5,6 +5,7 @@ import { useEffect, useState, useTransition } from "react";
 import { IconBox, IconClock, IconClose, IconExternal, IconGlobe, IconHelp, IconHistory, IconImage, IconInfo, IconLayout, IconLogout, IconMail, IconMenu, IconPin, IconPlane, IconTag, IconUser, IconUsers } from "@/components/Icons";
 import type { SiteContent } from "@/lib/content/schema";
 import { FAQ_CATEGORY_LIST as FAQ_CATEGORIES, JOB_TYPES } from "@/lib/blocks/faq-categories";
+import { isJobOpen, jamaicaToday } from "@/lib/jobs";
 import { jmd, serviceChargeJmd } from "@/lib/rates";
 import type { ActivityEntry } from "@/lib/activity";
 import type { Application } from "@/lib/applications-shared";
@@ -14,6 +15,7 @@ import { AccountPanel } from "./AccountPanel";
 import { ActivityPanel } from "./ActivityPanel";
 import { ApplicationsPanel } from "./ApplicationsPanel";
 import { StaffPanel } from "./StaffPanel";
+import { Fold, Pager, useOpen, usePager } from "./_editor/ListTools";
 import { HistoryPanel, type VersionInfo } from "./_editor/HistoryPanel";
 import { MediaLibrary } from "./_editor/MediaLibrary";
 import { PagesPanel } from "./_editor/PagesPanel";
@@ -34,7 +36,7 @@ const TABS: { id: Tab; label: string; group: Group; description: string; icon: R
   { id: "branches", label: "Branches & contact", group: "Website content", icon: <IconPin className="h-5 w-5" />, description: "Opening hours, branches, phone and WhatsApp numbers, email and social links." },
   { id: "faqs", label: "FAQs", group: "Website content", icon: <IconHelp className="h-5 w-5" />, description: "Questions on the FAQs page. Tick “Show on homepage” for up to six." },
   { id: "china", label: "China addresses", group: "Website content", icon: <IconGlobe className="h-5 w-5" />, description: "The Air, Sea and Dangerous goods warehouse addresses on the China Direct page." },
-  { id: "careers", label: "Careers", group: "Website content", icon: <IconUsers className="h-5 w-5" />, description: "Job openings on the Careers page. Untick “Accepting applications” to close a role." },
+  { id: "careers", label: "Careers", group: "Website content", icon: <IconUsers className="h-5 w-5" />, description: "Job openings on the Careers page. Tick “Live” to publish a job; it closes by itself after its apply-by date." },
   { id: "history", label: "Version history", group: "Admin", icon: <IconHistory className="h-5 w-5" />, description: "Earlier versions of the website content. Restore one if a change went wrong." },
   { id: "staff", label: "Staff", group: "Admin", icon: <IconUsers className="h-5 w-5" />, description: "Add staff, reset passwords and switch accounts off.", superadminOnly: true },
   { id: "activity", label: "Activity", group: "Admin", icon: <IconClock className="h-5 w-5" />, description: "Who logged in, what they changed and when.", superadminOnly: true },
@@ -99,6 +101,19 @@ export function AdminEditor({
   const [tab, setTab] = useState<Tab>("messages");
   const [messages, setMessages] = useState(initialMessages);
   const [images, setImages] = useState(initialImages);
+  // Long lists: page-by-page, with cards that fold away.
+  const [faqSearch, setFaqSearch] = useState("");
+  const [faqTopic, setFaqTopic] = useState("");
+  const faqMatches = c.faqs
+    .map((f, i) => ({ f, i }))
+    .filter(({ f }) => (!faqTopic || f.category === faqTopic) && (!faqSearch.trim() || `${f.q} ${f.a}`.toLowerCase().includes(faqSearch.trim().toLowerCase())));
+  const faqPager = usePager(faqMatches, 10);
+  const faqOpen = useOpen();
+  const branchPager = usePager(c.branches, 5);
+  const branchOpen = useOpen();
+  const jobPager = usePager(c.jobs, 10);
+  const jobOpen = useOpen();
+  const messagePager = usePager(messages, 20);
   const [status, setStatus] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
   const [dirty, setDirty] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -263,7 +278,7 @@ export function AdminEditor({
                 <p className="text-sm text-muted">Messages sent from the Contact page form appear here, newest first.</p>
               </section>
             ) : (
-              messages.map((m) => (
+              messagePager.items.map((m) => (
                 <article key={m.id} className={`${card} flex flex-col gap-2`}>
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
                     <h2 className="text-lg font-bold">{m.name} <span className="font-normal text-muted">· {m.topic}</span></h2>
@@ -292,6 +307,7 @@ export function AdminEditor({
                 </article>
               ))
             )}
+            <Pager page={messagePager.page} pages={messagePager.pages} onChange={messagePager.setPage} total={messages.length} perPage={20} label="messages" />
           </>
         )}
 
@@ -449,26 +465,34 @@ export function AdminEditor({
                 <Field label="Sunday"><input className={input} value={c.hours.sunday} onChange={(e) => edit((d) => { d.hours.sunday = e.target.value; })} /></Field>
               </div>
             </section>
-            {c.branches.map((b, i) => (
-              <section key={i} className={`${card} flex flex-col gap-4`}>
-                <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-bold">Branch {i + 1}</h2>
-                  {c.branches.length > 1 ? (
-                    <button type="button" className="text-sm font-semibold text-red-700" onClick={() => edit((d) => { d.branches.splice(i, 1); })}>Remove</button>
+            <Pager page={branchPager.page} pages={branchPager.pages} onChange={branchPager.setPage} total={c.branches.length} perPage={5} label="branches" />
+            {branchPager.items.map((b, k) => {
+              const i = branchPager.start + k;
+              return (
+                <Fold
+                  key={i}
+                  title={b.name || `Branch ${i + 1}`}
+                  subtitle={[b.address, b.phone].filter(Boolean).join(" · ")}
+                  open={branchOpen.isOpen(String(i))}
+                  onToggle={() => branchOpen.toggle(String(i))}
+                  actions={c.branches.length > 1 ? (
+                    <button type="button" className="h-9 px-2 text-sm font-semibold text-red-700" onClick={() => { if (confirm(`Remove the branch “${b.name}”?`)) edit((d) => { d.branches.splice(i, 1); }); }}>Remove</button>
                   ) : null}
-                </div>
+                >
                 <div className="grid gap-4 md:grid-cols-2">
-                  <Field label="Name"><input className={input} value={b.name} onChange={(e) => edit((d) => { d.branches[i].name = e.target.value; })} /></Field>
-                  <Field label="Phone"><input className={input} value={b.phone} onChange={(e) => edit((d) => { d.branches[i].phone = e.target.value; })} /></Field>
-                  <Field label="Contact page label" hint="Shown above this branch's number on the Contact page, e.g. Clock Mobay"><input className={input} value={b.contactLabel} onChange={(e) => edit((d) => { d.branches[i].contactLabel = e.target.value; })} /></Field>
-                  <Field label="Address"><input className={input} value={b.address} onChange={(e) => edit((d) => { d.branches[i].address = e.target.value; })} /></Field>
-                  <Field label="Google Maps link" hint="Open the branch in Google Maps, tap Share, copy the link and paste it here">
-                    <input className={input} type="url" value={b.mapsUrl} onChange={(e) => edit((d) => { d.branches[i].mapsUrl = e.target.value; })} />
-                  </Field>
-                </div>
-              </section>
-            ))}
-            <button type="button" className="h-11 rounded-xl border-2 border-dashed border-line font-semibold" onClick={() => edit((d) => { d.branches.push({ name: "New branch", address: "", mapsUrl: "", phone: d.contact.phones[0], contactLabel: "" }); })}>
+                    <Field label="Name"><input className={input} value={b.name} onChange={(e) => edit((d) => { d.branches[i].name = e.target.value; })} /></Field>
+                    <Field label="Phone"><input className={input} value={b.phone} onChange={(e) => edit((d) => { d.branches[i].phone = e.target.value; })} /></Field>
+                    <Field label="Contact page label" hint="Shown above this branch's number on the Contact page, e.g. Clock Mobay"><input className={input} value={b.contactLabel} onChange={(e) => edit((d) => { d.branches[i].contactLabel = e.target.value; })} /></Field>
+                    <Field label="Address"><input className={input} value={b.address} onChange={(e) => edit((d) => { d.branches[i].address = e.target.value; })} /></Field>
+                    <Field label="Google Maps link" hint="Open the branch in Google Maps, tap Share, copy the link and paste it here">
+                      <input className={input} type="url" value={b.mapsUrl} onChange={(e) => edit((d) => { d.branches[i].mapsUrl = e.target.value; })} />
+                    </Field>
+                  </div>
+                </Fold>
+              );
+            })}
+            <Pager page={branchPager.page} pages={branchPager.pages} onChange={branchPager.setPage} total={c.branches.length} perPage={5} label="branches" />
+            <button type="button" className="h-11 rounded-xl border-2 border-dashed border-line font-semibold" onClick={() => { edit((d) => { d.branches.push({ name: "New branch", address: "", mapsUrl: "", phone: d.contact.phones[0], contactLabel: "" }); }); branchPager.goLast(); branchOpen.openOnly(String(c.branches.length)); }}>
               + Add a branch
             </button>
             <section className={`${card} flex flex-col gap-4`}>
@@ -508,8 +532,30 @@ export function AdminEditor({
         {tab === "faqs" && (
           <>
             <p className="text-sm text-muted">Tick “Show on homepage” for up to 6 FAQs. Every FAQ appears on the FAQs page under its topic.</p>
-            {c.faqs.map((f, i) => (
-              <section key={i} className={`${card} flex flex-col gap-3`}>
+            <div className="flex flex-col gap-2 rounded-2xl border border-line bg-white p-3 sm:flex-row">
+              <input
+                type="search"
+                className={input}
+                placeholder="Search questions and answers…"
+                value={faqSearch}
+                onChange={(e) => { setFaqSearch(e.target.value); faqPager.setPage(1); }}
+                aria-label="Search FAQs"
+              />
+              <select className={`${input} sm:w-64`} value={faqTopic} onChange={(e) => { setFaqTopic(e.target.value); faqPager.setPage(1); }} aria-label="Filter by topic">
+                <option value="">All topics ({c.faqs.length})</option>
+                {FAQ_CATEGORIES.map((cat) => <option key={cat} value={cat}>{cat} ({c.faqs.filter((f) => f.category === cat).length})</option>)}
+              </select>
+            </div>
+            {faqMatches.length === 0 ? <p className={`${card} text-sm text-muted`}>No questions match. Try another word or topic.</p> : null}
+            <Pager page={faqPager.page} pages={faqPager.pages} onChange={faqPager.setPage} total={faqMatches.length} perPage={10} label="questions" />
+            {faqPager.items.map(({ f, i }) => (
+              <Fold
+                key={i}
+                title={f.q || "New question"}
+                subtitle={`${f.category}${f.featured ? " · On homepage" : ""}`}
+                open={faqOpen.isOpen(String(i))}
+                onToggle={() => faqOpen.toggle(String(i))}
+              >
                 <Field label="Question"><input className={input} value={f.q} onChange={(e) => edit((d) => { d.faqs[i].q = e.target.value; })} /></Field>
                 <Field label="Answer" hint='For a bullet list, start each line with "- "'>
                   <textarea rows={4} className={`${input} h-auto py-2`} value={f.a} onChange={(e) => edit((d) => { d.faqs[i].a = e.target.value; })} />
@@ -528,11 +574,22 @@ export function AdminEditor({
                   <span className="flex-1" />
                   <button type="button" disabled={i === 0} className="h-9 rounded-lg border border-line px-3 text-sm disabled:opacity-40" onClick={() => edit((d) => { [d.faqs[i - 1], d.faqs[i]] = [d.faqs[i], d.faqs[i - 1]]; })}>↑ Up</button>
                   <button type="button" disabled={i === c.faqs.length - 1} className="h-9 rounded-lg border border-line px-3 text-sm disabled:opacity-40" onClick={() => edit((d) => { [d.faqs[i + 1], d.faqs[i]] = [d.faqs[i], d.faqs[i + 1]]; })}>↓ Down</button>
-                  <button type="button" className="h-9 px-2 text-sm font-semibold text-red-700" onClick={() => edit((d) => { d.faqs.splice(i, 1); })}>Delete</button>
+                  <button type="button" className="h-9 px-2 text-sm font-semibold text-red-700" onClick={() => { if (confirm("Delete this question?")) edit((d) => { d.faqs.splice(i, 1); }); }}>Delete</button>
                 </div>
-              </section>
+              </Fold>
             ))}
-            <button type="button" className="h-11 rounded-xl border-2 border-dashed border-line font-semibold" onClick={() => edit((d) => { d.faqs.push({ q: "New question", a: "Answer", category: "Getting started", featured: false }); })}>
+            <Pager page={faqPager.page} pages={faqPager.pages} onChange={faqPager.setPage} total={faqMatches.length} perPage={10} label="questions" />
+            <button
+              type="button"
+              className="h-11 rounded-xl border-2 border-dashed border-line font-semibold"
+              onClick={() => {
+                edit((d) => { d.faqs.push({ q: "New question", a: "Answer", category: "Getting started", featured: false }); });
+                setFaqSearch("");
+                setFaqTopic("");
+                faqPager.goLast();
+                faqOpen.openOnly(String(c.faqs.length));
+              }}
+            >
               + Add a question
             </button>
           </>
@@ -564,13 +621,13 @@ export function AdminEditor({
             <button
               type="button"
               className="h-11 rounded-xl border-2 border-dashed border-line font-semibold"
-              onClick={() =>
+              onClick={() => {
                 edit((d) => {
                   d.jobs.unshift({
                     id: `position-${Math.random().toString(36).slice(2, 7)}`,
                     title: "New position",
                     department: "Customer Service",
-                    location: d.branches[0]?.name ?? "Montego Bay",
+                    location: d.branches[0]?.name ?? "",
                     type: "Full-time",
                     summary: "One or two sentences about the role.",
                     about: "",
@@ -580,66 +637,84 @@ export function AdminEditor({
                     postedAt: new Date().toISOString().slice(0, 10),
                     open: false,
                   });
-                })
-              }
+                });
+                jobPager.setPage(1);
+                jobOpen.openOnly("0");
+              }}
             >
               + Add a job opening
             </button>
             {c.jobs.length === 0 ? <p className={`${card} text-sm text-muted`}>No job openings yet. The Careers page shows “No openings right now” and invites general applications.</p> : null}
-            {c.jobs.map((j, i) => (
-              <section key={i} className={`${card} flex flex-col gap-4`}>
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <h2 className="text-xl font-bold">{j.title || "Untitled position"}</h2>
-                  <label className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold ${j.open ? "bg-whatsapp text-white" : "bg-mist"}`}>
+            <Pager page={jobPager.page} pages={jobPager.pages} onChange={jobPager.setPage} total={c.jobs.length} perPage={10} label="jobs" />
+            {jobPager.items.map((j, k) => {
+              const i = jobPager.start + k;
+              const live = isJobOpen(j);
+              return (
+                <Fold
+                  key={i}
+                  title={j.title || "Untitled position"}
+                  subtitle={[j.department, j.location, j.closingDate ? `apply by ${new Date(`${j.closingDate}T12:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}` : ""].filter(Boolean).join(" · ")}
+                  badge={<span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${live ? "bg-whatsapp text-white" : "bg-gold-soft"}`}>{live ? "Live" : j.open ? "Closed (date passed)" : "Hidden"}</span>}
+                  open={jobOpen.isOpen(String(i))}
+                  onToggle={() => jobOpen.toggle(String(i))}
+                >
+                  <label className={`flex items-center gap-2 self-start rounded-full px-3 py-1.5 text-sm font-semibold ${j.open ? "bg-whatsapp text-white" : "border-2 border-[#b07f00] bg-gold-soft"}`}>
                     <input type="checkbox" className="h-4 w-4" checked={j.open} onChange={(e) => edit((d) => { d.jobs[i].open = e.target.checked; })} />
-                    {j.open ? "Accepting applications" : "Closed / draft"}
+                    {j.open ? "Live on the website: accepting applications" : "Hidden (draft): tick to show on the website"}
                   </label>
-                </div>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <Field label="Job title"><input className={input} value={j.title} onChange={(e) => edit((d) => { d.jobs[i].title = e.target.value; })} /></Field>
-                  <Field label="Page link" hint={`sgxpressja.com/careers/${j.id}`}>
-                    <div className="flex gap-2">
-                      <input className={input} value={j.id} onChange={(e) => edit((d) => { d.jobs[i].id = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-"); })} />
-                      <button type="button" className="h-11 flex-none rounded-lg border border-line px-3 text-sm font-semibold" onClick={() => edit((d) => { d.jobs[i].id = d.jobs[i].title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 70) || d.jobs[i].id; })}>
-                        From title
-                      </button>
+                {j.open && j.closingDate && j.closingDate < jamaicaToday() ? (
+                    <p className="rounded-lg bg-gold-soft px-3 py-2 text-sm">The apply-by date has passed, so this job is no longer on the website. Change or clear the date to show it again.</p>
+                  ) : null}
+                  {!j.open ? (
+                    <p className="rounded-lg bg-gold-soft px-3 py-2 text-sm">This job is not on the Careers page yet. Tick the box above, then <strong>Save and publish</strong>.</p>
+                  ) : null}
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <Field label="Job title"><input className={input} value={j.title} onChange={(e) => edit((d) => { d.jobs[i].title = e.target.value; })} /></Field>
+                    <Field label="Page link" hint={`sgxpressja.com/careers/${j.id}`}>
+                      <div className="flex gap-2">
+                        <input className={input} value={j.id} onChange={(e) => edit((d) => { d.jobs[i].id = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-"); })} />
+                        <button type="button" className="h-11 flex-none rounded-lg border border-line px-3 text-sm font-semibold" onClick={() => edit((d) => { d.jobs[i].id = d.jobs[i].title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 70) || d.jobs[i].id; })}>
+                          From title
+                        </button>
+                      </div>
+                    </Field>
+                    <Field label="Department"><input className={input} value={j.department} onChange={(e) => edit((d) => { d.jobs[i].department = e.target.value; })} /></Field>
+                    <Field label="Location" hint="e.g. Church Street, Miriam Way (Clock), Florida warehouse">
+                      <input className={input} value={j.location} onChange={(e) => edit((d) => { d.jobs[i].location = e.target.value; })} />
+                    </Field>
+                    <Field label="Type">
+                      <select className={input} value={j.type} onChange={(e) => edit((d) => { d.jobs[i].type = e.target.value as (typeof JOB_TYPES)[number]; })}>
+                        {JOB_TYPES.map((t) => <option key={t}>{t}</option>)}
+                      </select>
+                    </Field>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Field label="Posted"><input type="date" className={input} value={j.postedAt} onChange={(e) => edit((d) => { d.jobs[i].postedAt = e.target.value; })} /></Field>
+                      <Field label="Apply by (optional)"><input type="date" className={input} value={j.closingDate} onChange={(e) => edit((d) => { d.jobs[i].closingDate = e.target.value; })} /></Field>
                     </div>
-                  </Field>
-                  <Field label="Department"><input className={input} value={j.department} onChange={(e) => edit((d) => { d.jobs[i].department = e.target.value; })} /></Field>
-                  <Field label="Location" hint="e.g. Church Street, Miriam Way (Clock), Florida warehouse">
-                    <input className={input} value={j.location} onChange={(e) => edit((d) => { d.jobs[i].location = e.target.value; })} />
-                  </Field>
-                  <Field label="Type">
-                    <select className={input} value={j.type} onChange={(e) => edit((d) => { d.jobs[i].type = e.target.value as (typeof JOB_TYPES)[number]; })}>
-                      {JOB_TYPES.map((t) => <option key={t}>{t}</option>)}
-                    </select>
-                  </Field>
-                  <div className="grid grid-cols-2 gap-3">
-                    <Field label="Posted"><input type="date" className={input} value={j.postedAt} onChange={(e) => edit((d) => { d.jobs[i].postedAt = e.target.value; })} /></Field>
-                    <Field label="Apply by (optional)"><input type="date" className={input} value={j.closingDate} onChange={(e) => edit((d) => { d.jobs[i].closingDate = e.target.value; })} /></Field>
                   </div>
-                </div>
-                <Field label="Short summary" hint="Shown on the job card. One or two sentences.">
-                  <textarea rows={2} className={`${input} h-auto py-2`} value={j.summary} onChange={(e) => edit((d) => { d.jobs[i].summary = e.target.value; })} />
-                </Field>
-                <Field label="About the role (optional)">
-                  <textarea rows={4} className={`${input} h-auto py-2`} value={j.about} onChange={(e) => edit((d) => { d.jobs[i].about = e.target.value; })} />
-                </Field>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <Field label="What you'll do" hint="One per line">
-                    <textarea rows={5} className={`${input} h-auto py-2`} value={j.responsibilities.join("\n")} onChange={(e) => edit((d) => { d.jobs[i].responsibilities = e.target.value.split("\n"); })} />
+                  <Field label={`Short summary (${j.summary.length}/300)`} hint="Shown on the job card. One or two sentences; put the details in “About the role”.">
+                    <textarea rows={2} maxLength={300} className={`${input} h-auto py-2`} value={j.summary} onChange={(e) => edit((d) => { d.jobs[i].summary = e.target.value; })} />
                   </Field>
-                  <Field label="What we're looking for" hint="One per line">
-                    <textarea rows={5} className={`${input} h-auto py-2`} value={j.requirements.join("\n")} onChange={(e) => edit((d) => { d.jobs[i].requirements = e.target.value.split("\n"); })} />
+                  <Field label="About the role (optional)">
+                    <textarea rows={6} maxLength={6000} className={`${input} h-auto py-2`} value={j.about} onChange={(e) => edit((d) => { d.jobs[i].about = e.target.value; })} />
                   </Field>
-                </div>
-                <div className="flex justify-end">
-                  <button type="button" className="h-9 px-2 text-sm font-semibold text-red-700" onClick={() => { if (confirm(`Delete “${j.title}”? Applications already received are kept.`)) edit((d) => { d.jobs.splice(i, 1); }); }}>
-                    Delete job
-                  </button>
-                </div>
-              </section>
-            ))}
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <Field label="What you'll do" hint="One per line">
+                      <textarea rows={5} className={`${input} h-auto py-2`} value={j.responsibilities.join("\n")} onChange={(e) => edit((d) => { d.jobs[i].responsibilities = e.target.value.split("\n"); })} />
+                    </Field>
+                    <Field label="What we're looking for" hint="One per line">
+                      <textarea rows={5} className={`${input} h-auto py-2`} value={j.requirements.join("\n")} onChange={(e) => edit((d) => { d.jobs[i].requirements = e.target.value.split("\n"); })} />
+                    </Field>
+                  </div>
+                  <div className="flex justify-end">
+                    <button type="button" className="h-9 px-2 text-sm font-semibold text-red-700" onClick={() => { if (confirm(`Delete “${j.title}”? Applications already received are kept.`)) edit((d) => { d.jobs.splice(i, 1); }); }}>
+                      Delete job
+                    </button>
+                  </div>
+                </Fold>
+              );
+            })}
+            <Pager page={jobPager.page} pages={jobPager.pages} onChange={jobPager.setPage} total={c.jobs.length} perPage={10} label="jobs" />
           </>
         )}
 

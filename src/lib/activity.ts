@@ -122,12 +122,54 @@ function describePages(before: PageLike[], after: PageLike[]): string[] {
   return out;
 }
 
+type JobLike = { id: string; title: string } & Record<string, unknown>;
+const JOB_FIELDS: Record<string, string> = {
+  title: "title", id: "page link", department: "department", location: "location", type: "type", summary: "short summary",
+  about: "about the role", responsibilities: "what you'll do", requirements: "what we're looking for", closingDate: "apply by", postedAt: "posted",
+};
+
+/** Job edits in plain words, e.g. "Careers › Customer Service Rep: now live". */
+function describeJobs(before: JobLike[], after: JobLike[]): string[] {
+  const out: string[] = [];
+  // Match jobs by their page link; a job whose link was edited is matched by position.
+  const byId = new Map(before.map((o) => [o.id, o]));
+  const used = new Set<JobLike>();
+  const pairs = after.map((p, i) => {
+    let o = byId.get(p.id);
+    if (!o) {
+      const same = before[i];
+      if (same && !after.some((x) => x.id === same.id)) o = same;
+    }
+    if (o) used.add(o);
+    return { p, o };
+  });
+  for (const { p, o } of pairs) {
+    if (!o) {
+      out.push(`Careers: added the job “${p.title}”`);
+      continue;
+    }
+    const name = `Careers › ${p.title || o.title}`;
+    if (o.open !== p.open) out.push(`${name}: ${p.open ? "now live (accepting applications)" : "hidden from the website"}`);
+    for (const [k, label] of Object.entries(JOB_FIELDS)) {
+      const a = Array.isArray(o[k]) ? (o[k] as string[]).join(" / ") : o[k];
+      const b = Array.isArray(p[k]) ? (p[k] as string[]).join(" / ") : p[k];
+      if (a !== b) out.push(`${name} › ${label}: ${show(a)} → ${show(b)}`);
+    }
+  }
+  for (const o of before) if (!used.has(o)) out.push(`Careers: removed the job “${o.title}”`);
+  return out;
+}
+
 /** Lists the differences between two versions of the site content. */
 export function describeChanges(before: unknown, after: unknown, path: (string | number)[] = []): string[] {
   if (path.length === 0 && before && after && typeof before === "object" && typeof after === "object" && "pages" in after) {
-    const { pages: bp, ...b } = before as Record<string, unknown>;
-    const { pages: ap, ...a } = after as Record<string, unknown>;
-    return [...describeChanges(b, a), ...describePages((bp ?? []) as PageLike[], (ap ?? []) as PageLike[])];
+    const { pages: bp, jobs: bj, ...b } = before as Record<string, unknown>;
+    const { pages: ap, jobs: aj, ...a } = after as Record<string, unknown>;
+    return [
+      ...describeChanges(b, a),
+      ...describeJobs((bj ?? []) as JobLike[], (aj ?? []) as JobLike[]),
+      ...describePages((bp ?? []) as PageLike[], (ap ?? []) as PageLike[]),
+    ];
   }
   if (Array.isArray(before) && Array.isArray(after)) {
     const out: string[] = [];

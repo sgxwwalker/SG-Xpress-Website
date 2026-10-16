@@ -31,6 +31,7 @@ const STARTERS: Partial<Record<BlockType, Record<string, unknown>>> = {
   text: { heading: "Heading", body: "Write your text here.\n\nLeave a blank line between paragraphs." },
   image: { size: "medium" },
   banner: { heading: "Special offer", text: "Describe the offer.", buttons: [SIGN_UP] },
+  stats: { items: [{ value: "{flights per week}×", label: "Flights a week" }, { value: "{branch count}", label: "Locations" }, { value: "1.2+", label: "Million packages shipped" }, { value: "$0", label: "To sign up" }] },
   note: { title: "Please note", text: "Something customers must know." },
   cta: { heading: "Ready to ship with SG Xpress?", text: "Free to join. Your US address is ready right after sign-up.", buttons: [SIGN_UP] },
   tiles: { heading: "Heading", items: [{ text: "Item one" }, { text: "Item two" }, { text: "Item three" }] },

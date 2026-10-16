@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Pager, usePager } from "./_editor/ListTools";
 import { APPLICATION_STATUSES, type Application, type ApplicationStatus } from "@/lib/applications-shared";
 import { deleteApplication, updateApplicationStatus } from "./actions";
 
@@ -23,6 +24,7 @@ export function ApplicationsPanel({ initial }: { initial: Application[] }) {
   const [status, setStatus] = useState("All");
   const jobs = ["All", ...new Set(apps.map((a) => a.jobTitle))];
   const shown = apps.filter((a) => (job === "All" || a.jobTitle === job) && (status === "All" || a.status === status));
+  const pager = usePager(shown, 20);
   const select = "h-10 rounded-lg border-2 border-line bg-white px-2";
 
   return (
@@ -30,13 +32,13 @@ export function ApplicationsPanel({ initial }: { initial: Application[] }) {
       <section className="flex flex-wrap items-center gap-4 rounded-2xl border border-line bg-white p-4">
         <label className="flex items-center gap-2 text-sm font-semibold">
           Position
-          <select className={select} value={job} onChange={(e) => setJob(e.target.value)}>
+          <select className={select} value={job} onChange={(e) => { setJob(e.target.value); pager.setPage(1); }}>
             {jobs.map((j) => <option key={j}>{j}</option>)}
           </select>
         </label>
         <label className="flex items-center gap-2 text-sm font-semibold">
           Status
-          <select className={select} value={status} onChange={(e) => setStatus(e.target.value)}>
+          <select className={select} value={status} onChange={(e) => { setStatus(e.target.value); pager.setPage(1); }}>
             {["All", ...APPLICATION_STATUSES].map((s) => <option key={s}>{s}</option>)}
           </select>
         </label>
@@ -50,7 +52,8 @@ export function ApplicationsPanel({ initial }: { initial: Application[] }) {
         </section>
       ) : null}
 
-      {shown.map((a) => (
+      <Pager page={pager.page} pages={pager.pages} onChange={pager.setPage} total={shown.length} perPage={20} label="applications" />
+      {pager.items.map((a) => (
         <article key={a.id} className={`${card} flex flex-col gap-3`}>
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
@@ -99,6 +102,7 @@ export function ApplicationsPanel({ initial }: { initial: Application[] }) {
           </div>
         </article>
       ))}
+      <Pager page={pager.page} pages={pager.pages} onChange={pager.setPage} total={shown.length} perPage={20} label="applications" />
     </div>
   );
 }
