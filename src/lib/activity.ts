@@ -1,4 +1,5 @@
 import { dataPath, READ_ONLY, readJson, writeJson } from "./data-files";
+import { BLOCKS, type BlockType } from "./blocks/registry";
 import type { AdminUser } from "./staff";
 
 // Who did what in /admin. Shown to the superadmin in the Activity tab.
@@ -81,8 +82,53 @@ function label(path: (string | number)[]): string {
   return parts.join(" › ");
 }
 
+type PageLike = { id: string; name: string; sections: { id: string; type: string; hidden: boolean; tone: string; anchor: string; props: unknown }[] } & Record<string, unknown>;
+
+/** Page edits in plain words, e.g. "Page Home › Page banner › heading: “A” → “B”". */
+function describePages(before: PageLike[], after: PageLike[]): string[] {
+  const out: string[] = [];
+  const old = new Map(before.map((p) => [p.id, p]));
+  for (const p of after) {
+    const o = old.get(p.id);
+    if (!o) {
+      out.push(`Added the page “${p.name}”`);
+      continue;
+    }
+    const page = `Page ${p.name}`;
+    for (const k of ["name", "slug", "seoTitle", "seoDescription", "published", "showInFooter"]) {
+      if (o[k] !== p[k]) out.push(`${page} › ${words(k)}: ${show(o[k])} → ${show(p[k])}`);
+    }
+    const oldSections = new Map(o.sections.map((s) => [s.id, s]));
+    for (const s of p.sections) {
+      const name = BLOCKS[s.type as BlockType]?.name ?? s.type;
+      const os = oldSections.get(s.id);
+      if (!os) {
+        out.push(`${page}: added a “${name}” section`);
+        continue;
+      }
+      const where = `${page} › ${name}`;
+      if (os.hidden !== s.hidden) out.push(`${where}: ${s.hidden ? "hidden" : "shown again"}`);
+      if (os.tone !== s.tone) out.push(`${where}: background ${os.tone} → ${s.tone}`);
+      if (os.anchor !== s.anchor) out.push(`${where}: section name ${show(os.anchor)} → ${show(s.anchor)}`);
+      out.push(...describeChanges(os.props, s.props).map((line) => `${where} › ${line}`));
+    }
+    const kept = new Set(p.sections.map((s) => s.id));
+    for (const s of o.sections) if (!kept.has(s.id)) out.push(`${page}: removed a “${BLOCKS[s.type as BlockType]?.name ?? s.type}” section`);
+    const order = (list: { id: string }[]) => list.map((s) => s.id).filter((id) => kept.has(id) && oldSections.has(id)).join();
+    if (order(o.sections) !== order(p.sections)) out.push(`${page}: sections moved`);
+  }
+  const now = new Set(after.map((p) => p.id));
+  for (const p of before) if (!now.has(p.id)) out.push(`Deleted the page “${p.name}”`);
+  return out;
+}
+
 /** Lists the differences between two versions of the site content. */
 export function describeChanges(before: unknown, after: unknown, path: (string | number)[] = []): string[] {
+  if (path.length === 0 && before && after && typeof before === "object" && typeof after === "object" && "pages" in after) {
+    const { pages: bp, ...b } = before as Record<string, unknown>;
+    const { pages: ap, ...a } = after as Record<string, unknown>;
+    return [...describeChanges(b, a), ...describePages((bp ?? []) as PageLike[], (ap ?? []) as PageLike[])];
+  }
   if (Array.isArray(before) && Array.isArray(after)) {
     const out: string[] = [];
     if (before.length !== after.length) out.push(`${label(path)}: ${before.length} → ${after.length} items`);

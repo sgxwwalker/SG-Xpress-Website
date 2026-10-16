@@ -2,9 +2,9 @@
 
 import Image from "next/image";
 import { useEffect, useState, useTransition } from "react";
-import { IconBox, IconClock, IconClose, IconExternal, IconGlobe, IconHelp, IconInfo, IconLogout, IconMail, IconMenu, IconPin, IconPlane, IconTag, IconUser, IconUsers } from "@/components/Icons";
+import { IconBox, IconClock, IconClose, IconExternal, IconGlobe, IconHelp, IconHistory, IconImage, IconInfo, IconLayout, IconLogout, IconMail, IconMenu, IconPin, IconPlane, IconTag, IconUser, IconUsers } from "@/components/Icons";
 import type { SiteContent } from "@/lib/content/schema";
-import { FAQ_CATEGORIES, JOB_TYPES } from "@/lib/content/schema";
+import { FAQ_CATEGORY_LIST as FAQ_CATEGORIES, JOB_TYPES } from "@/lib/blocks/faq-categories";
 import { jmd, serviceChargeJmd } from "@/lib/rates";
 import type { ActivityEntry } from "@/lib/activity";
 import type { Application } from "@/lib/applications-shared";
@@ -14,14 +14,20 @@ import { AccountPanel } from "./AccountPanel";
 import { ActivityPanel } from "./ActivityPanel";
 import { ApplicationsPanel } from "./ApplicationsPanel";
 import { StaffPanel } from "./StaffPanel";
+import { HistoryPanel, type VersionInfo } from "./_editor/HistoryPanel";
+import { MediaLibrary } from "./_editor/MediaLibrary";
+import { PagesPanel } from "./_editor/PagesPanel";
+import type { LibraryImage } from "@/lib/media";
 import { deleteMessage, logout, save } from "./actions";
 
-type Tab = "messages" | "applications" | "notice" | "air" | "fees" | "branches" | "faqs" | "china" | "careers" | "staff" | "activity" | "account";
-const CONTENT_TABS: Tab[] = ["notice", "air", "fees", "branches", "faqs", "china", "careers"];
+type Tab = "messages" | "applications" | "pages" | "media" | "history" | "notice" | "air" | "fees" | "branches" | "faqs" | "china" | "careers" | "staff" | "activity" | "account";
+const CONTENT_TABS: Tab[] = ["pages", "notice", "air", "fees", "branches", "faqs", "china", "careers"];
 type Group = "Inbox" | "Website content" | "Admin" | "Account";
 const TABS: { id: Tab; label: string; group: Group; description: string; icon: React.ReactNode; superadminOnly?: boolean }[] = [
   { id: "messages", label: "Messages", group: "Inbox", icon: <IconMail className="h-5 w-5" />, description: "Messages sent from the Contact page, newest first." },
   { id: "applications", label: "Applications", group: "Inbox", icon: <IconBox className="h-5 w-5" />, description: "Job applications from the Careers page. CVs are private to admin." },
+  { id: "pages", label: "Pages", group: "Website content", icon: <IconLayout className="h-5 w-5" />, description: "Every page's sections: text, pictures, buttons and order. Add new pages for promotions." },
+  { id: "media", label: "Media library", group: "Website content", icon: <IconImage className="h-5 w-5" />, description: "Upload pictures and posters to use on any page." },
   { id: "notice", label: "Notice bar", group: "Website content", icon: <IconInfo className="h-5 w-5" />, description: "The yellow bar at the top of every page." },
   { id: "air", label: "Air rates & schedule", group: "Website content", icon: <IconPlane className="h-5 w-5" />, description: "USA air rates by weight, the flight schedule and Florida warehouse hours." },
   { id: "fees", label: "Fees & other rates", group: "Website content", icon: <IconTag className="h-5 w-5" />, description: "Processing fees, storage, service charge, ocean and China rates." },
@@ -29,6 +35,7 @@ const TABS: { id: Tab; label: string; group: Group; description: string; icon: R
   { id: "faqs", label: "FAQs", group: "Website content", icon: <IconHelp className="h-5 w-5" />, description: "Questions on the FAQs page. Tick “Show on homepage” for up to six." },
   { id: "china", label: "China addresses", group: "Website content", icon: <IconGlobe className="h-5 w-5" />, description: "The Air, Sea and Dangerous goods warehouse addresses on the China Direct page." },
   { id: "careers", label: "Careers", group: "Website content", icon: <IconUsers className="h-5 w-5" />, description: "Job openings on the Careers page. Untick “Accepting applications” to close a role." },
+  { id: "history", label: "Version history", group: "Admin", icon: <IconHistory className="h-5 w-5" />, description: "Earlier versions of the website content. Restore one if a change went wrong." },
   { id: "staff", label: "Staff", group: "Admin", icon: <IconUsers className="h-5 w-5" />, description: "Add staff, reset passwords and switch accounts off.", superadminOnly: true },
   { id: "activity", label: "Activity", group: "Admin", icon: <IconClock className="h-5 w-5" />, description: "Who logged in, what they changed and when.", superadminOnly: true },
   { id: "account", label: "My account", group: "Account", icon: <IconUser className="h-5 w-5" />, description: "Your login details and password." },
@@ -71,6 +78,9 @@ export function AdminEditor({
   applications,
   staff,
   activity,
+  images: initialImages,
+  versions,
+  readOnly,
 }: {
   user: AdminUser;
   initial: SiteContent;
@@ -79,12 +89,16 @@ export function AdminEditor({
   applications: Application[];
   staff: StaffSummary[];
   activity: ActivityEntry[];
+  images: LibraryImage[];
+  versions: VersionInfo[];
+  readOnly: boolean;
 }) {
   const isSuper = user.role === "superadmin";
   const [c, setC] = useState<SiteContent>(initial);
   const [version, setVersion] = useState(initialVersion);
   const [tab, setTab] = useState<Tab>("messages");
   const [messages, setMessages] = useState(initialMessages);
+  const [images, setImages] = useState(initialImages);
   const [status, setStatus] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
   const [dirty, setDirty] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -233,7 +247,7 @@ export function AdminEditor({
       ) : null}
 
       <div className="flex min-w-0 flex-col">
-      <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-4 px-4 py-6 md:px-8 md:py-10">
+      <main className={`mx-auto flex w-full flex-1 flex-col gap-4 px-4 py-6 md:px-8 md:py-10 ${tab === "pages" ? "max-w-[1600px]" : "max-w-4xl"}`}>
         <div className="mb-2 flex items-start gap-3">
           <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-navy text-gold">{current.icon}</span>
           <div>
@@ -280,6 +294,10 @@ export function AdminEditor({
             )}
           </>
         )}
+
+        {tab === "pages" && <PagesPanel c={c} edit={edit} images={images} setImages={setImages} />}
+        {tab === "media" && <MediaLibrary images={images} setImages={setImages} readOnly={readOnly} />}
+        {tab === "history" && <HistoryPanel versions={versions} dirty={dirty} readOnly={readOnly} />}
 
         {tab === "notice" && (
           <section className={`${card} flex flex-col gap-4`}>

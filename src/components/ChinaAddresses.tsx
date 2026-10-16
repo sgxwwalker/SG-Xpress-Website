@@ -6,16 +6,19 @@ import { useState } from "react";
 type Field = { label: string; value: string };
 type Key = "air" | "sea" | "dg";
 
-const TABS: { key: Key; label: string; image: string; alt: string }[] = [
-  { key: "air", label: "Air", image: "/images/label-air-2026-10.jpg", alt: "China Air Warehouse shipping label template" },
-  { key: "sea", label: "Sea", image: "/images/label-sea-2026-10.jpg", alt: "China Sea Warehouse shipping label template" },
-  { key: "dg", label: "Dangerous", image: "/images/label-dg-2026-10c.jpg", alt: "Dangerous Goods warehouse shipping label template" },
+type LabelImage = { src: string; alt: string; width: number; height: number };
+
+const TABS: { key: Key; label: string }[] = [
+  { key: "air", label: "Air" },
+  { key: "sea", label: "Sea" },
+  { key: "dg", label: "Dangerous" },
 ];
 
-export function ChinaAddresses({ warehouses }: { warehouses: Record<Key, Field[]> }) {
+/** `images` are the shipping label pictures shown under each address (set in /admin → Pages). */
+export function ChinaAddresses({ warehouses, images }: { warehouses: Record<Key, Field[]>; images: Record<Key, LabelImage> }) {
   const [tab, setTab] = useState<Key>("air");
   const [copied, setCopied] = useState<string | null>(null);
-  const current = TABS.find((t) => t.key === tab)!;
+  const current = { ...TABS.find((t) => t.key === tab)!, image: images[tab] };
 
   async function copy(field: Field) {
     try {
@@ -68,10 +71,20 @@ export function ChinaAddresses({ warehouses }: { warehouses: Record<Key, Field[]
           })}
         </div>
       </div>
-      <figure>
-        <Image src={current.image} alt={current.alt} width={760} height={760} sizes="(min-width: 1024px) 520px, 100vw" className="w-full rounded-2xl" />
-        <figcaption className="mt-2 text-sm text-muted">Shipping label to show your supplier. Tap and hold to save it.</figcaption>
-      </figure>
+      {current.image.src ? (
+        <figure>
+          <Image
+            src={current.image.src}
+            alt={current.image.alt}
+            width={current.image.width || 760}
+            height={current.image.height || 760}
+            unoptimized={current.image.src.startsWith("/media/")}
+            sizes="(min-width: 1024px) 520px, 100vw"
+            className="w-full rounded-2xl"
+          />
+          <figcaption className="mt-2 text-sm text-muted">Shipping label to show your supplier. Tap and hold to save it.</figcaption>
+        </figure>
+      ) : null}
     </div>
   );
 }

@@ -1,4 +1,7 @@
 import { z } from "zod";
+import { FAQ_CATEGORY_LIST, JOB_TYPES } from "@/lib/blocks/faq-categories";
+import { defaultPages } from "./pages-default";
+import { pagesSchema } from "./pages-schema";
 
 // Everything staff can change from /admin. The public pages read only from this.
 
@@ -24,11 +27,11 @@ export const branchSchema = z.object({
 export const faqSchema = z.object({
   q: shortText.min(1),
   a: longText.min(1),
-  category: z.enum(["Getting started", "Shipping & tracking", "Invoices & customs", "Pickup & payments", "China & ocean shipping", "Customs brokerage"]),
+  category: z.enum(FAQ_CATEGORY_LIST),
   featured: z.boolean(),
 });
 
-export const JOB_TYPES = ["Full-time", "Part-time", "Contract", "Temporary", "Internship"] as const;
+export { JOB_TYPES };
 
 export const jobSchema = z.object({
   id: z
@@ -153,6 +156,8 @@ export const contentSchema = z.object({
     sea: z.array(addressFieldSchema).min(1).max(12),
     dg: z.array(addressFieldSchema).min(1).max(12),
   }),
+  // Every page's sections, edited in /admin → Pages.
+  pages: pagesSchema(defaultPages),
 });
 
 export type SiteContent = z.infer<typeof contentSchema>;

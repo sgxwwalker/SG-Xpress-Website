@@ -25,6 +25,14 @@ const nextConfig: NextConfig = {
         ],
       },
       { source: "/admin/:path*", headers: [{ key: "Cache-Control", value: "private, no-store" }] },
+      // The page editor shows this preview in a frame, so only our own admin may embed it.
+      {
+        source: "/admin/preview",
+        headers: [
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "Content-Security-Policy", value: "frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'" },
+        ],
+      },
     ];
   },
   // Keep old WordPress links (Google results, saved bookmarks) working.

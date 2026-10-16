@@ -5,9 +5,11 @@ import { redirect } from "next/navigation";
 import { clientIp } from "@/lib/client-ip";
 import { describeChanges, lastSave, logActivity } from "@/lib/activity";
 import { currentUser, endSession, startSession } from "@/lib/auth";
+import { BLOCKS, type BlockType } from "@/lib/blocks/registry";
 import { contentSchema } from "@/lib/content/schema";
 import { READ_ONLY, READ_ONLY_MESSAGE } from "@/lib/data-files";
-import { contentVersion, getContent, saveContent } from "@/lib/content/store";
+import { contentVersion, getContent, listVersions, readVersion, saveContent } from "@/lib/content/store";
+import { checkUpload, deleteMedia as removeMedia, MAX_UPLOAD_BYTES, saveMedia, toLibraryImage, updateMediaAlt, type LibraryImage } from "@/lib/media";
 import { deleteMessage as removeMessage, readMessages } from "@/lib/messages";
 import { APPLICATION_STATUSES, deleteApplication as removeApplication, setApplicationStatus, type ApplicationStatus } from "@/lib/applications";
 import { changeOwnPassword as setOwnPassword, createStaff, findActiveUser, summarise, updateStaff, verifyLogin, type StaffSummary } from "@/lib/staff";
@@ -77,6 +79,21 @@ const SECTION_NAMES: Record<string, string> = {
   socials: "Social links",
 };
 
+/** "Pages › Home › section 3 (Cards): Every button needs a label." */
+function friendlyError(issue: { path: PropertyKey[]; message: string }, input: unknown): string {
+  const [top, pageIndex, part, sectionIndex] = issue.path;
+  if (top === "pages" && typeof pageIndex === "number") {
+    const page = (input as { pages?: { name?: string; sections?: { type?: string }[] }[] }).pages?.[pageIndex];
+    let where = `Pages › ${page?.name ?? `page ${pageIndex + 1}`}`;
+    if (part === "sections" && typeof sectionIndex === "number") {
+      const type = page?.sections?.[sectionIndex]?.type as BlockType | undefined;
+      where += ` › section ${sectionIndex + 1}${type && BLOCKS[type] ? ` (${BLOCKS[type].name})` : ""}`;
+    }
+    return `${where}: ${issue.message}`;
+  }
+  return `${SECTION_NAMES[String(top)] ?? String(top)}: ${issue.message}`;
+}
+
 export type SaveResult = { ok: true; savedAt: string; version: number } | { ok: false; error: string };
 
 /** Saves the site content. `baseVersion` is the version the editor loaded, to catch overlapping edits. */
@@ -92,11 +109,7 @@ export async function save(input: unknown, baseVersion: number): Promise<SaveRes
   }
 
   const parsed = contentSchema.safeParse(input);
-  if (!parsed.success) {
-    const issue = parsed.error.issues[0];
-    const where = SECTION_NAMES[String(issue.path[0])] ?? String(issue.path[0]);
-    return { ok: false, error: `${where}: ${issue.message}` };
-  }
+  if (!parsed.success) return { ok: false, error: friendlyError(parsed.error.issues[0], input) };
 
   const before = await getContent();
   const changes = describeChanges(before, parsed.data);
@@ -192,4 +205,64 @@ export async function changeMyPassword(current: string, next: string): Promise<A
   } catch (e) {
     return { ok: false, error: (e as Error).message };
   }
+}
+
+// ---- Media library ----
+
+export type UploadResult = { ok: true; image: LibraryImage } | { ok: false; error: string };
+
+export async function uploadMedia(form: FormData): Promise<UploadResult> {
+  const user = await currentUser();
+  if (!user) return { ok: false, error: "Your session has ended. Log in again." };
+  if (READ_ONLY) return { ok: false, error: READ_ONLY_MESSAGE };
+  const file = form.get("file");
+  if (!(file instanceof File)) return { ok: false, error: "Choose a picture to upload." };
+  if (file.size > MAX_UPLOAD_BYTES) return { ok: false, error: "That picture is larger than 5 MB. Please use a smaller one." };
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const problem = checkUpload(bytes);
+  if (problem) return { ok: false, error: problem };
+  try {
+    const item = await saveMedia(bytes, file.name, String(form.get("alt") ?? ""), user.name);
+    await logActivity(user, "Uploaded a picture", [item.name]);
+    return { ok: true, image: toLibraryImage(item) };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}
+
+export async function setMediaAlt(id: string, alt: string): Promise<{ ok: boolean }> {
+  const user = await currentUser();
+  if (!user || READ_ONLY || typeof alt !== "string") return { ok: false };
+  return { ok: Boolean(await updateMediaAlt(String(id), alt)) };
+}
+
+/** Deletes a picture, unless a page still uses it. */
+export async function deleteMediaItem(id: string, file: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const user = await currentUser();
+  if (!user) return { ok: false, error: "Your session has ended. Log in again." };
+  if (READ_ONLY) return { ok: false, error: READ_ONLY_MESSAGE };
+  const c = await getContent();
+  const usedOn = c.pages.filter((p) => JSON.stringify(p.sections).includes(`/media/${file}`)).map((p) => p.name);
+  if (usedOn.length) return { ok: false, error: `This picture is still used on: ${usedOn.join(", ")}. Replace it there first, then delete it.` };
+  const item = await removeMedia(String(id));
+  if (!item) return { ok: false, error: "That picture was already deleted." };
+  await logActivity(user, "Deleted a picture", [item.name]);
+  return { ok: true };
+}
+
+// ---- Version history ----
+
+export async function restoreVersion(file: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const user = await currentUser();
+  if (!user) return { ok: false, error: "Your session has ended. Log in again." };
+  if (READ_ONLY) return { ok: false, error: READ_ONLY_MESSAGE };
+  if (!(await listVersions()).some((v) => v.file === file)) return { ok: false, error: "That version is no longer available." };
+  const version = await readVersion(file);
+  if (!version) return { ok: false, error: "That version can't be restored because it doesn't match the website's current rules." };
+  const changes = describeChanges(await getContent(), version);
+  if (!changes.length) return { ok: false, error: "The website already matches that version." };
+  await saveContent(version); // the current version is kept in the history too
+  await logActivity(user, "Restored an earlier version", changes);
+  revalidatePath("/", "layout");
+  return { ok: true };
 }

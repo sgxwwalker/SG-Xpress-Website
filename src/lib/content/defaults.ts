@@ -1,3 +1,4 @@
+import { defaultPages } from "./pages-default";
 import type { SiteContent } from "./schema";
 
 // Starting content, confirmed with SG Xpress in October 2026. Used until staff
@@ -81,7 +82,7 @@ export const defaultContent: SiteContent = {
   faqs: [
     { category: "Getting started", featured: false, q: "How do I start shipping with SG Xpress?", a: "Create your free account through our website. Once registered, log in to find your shipping address and SGX mailbox number. Use these details when placing orders online." },
     { category: "Getting started", featured: true, q: "How do I enter my shipping address?", a: "Copy the address exactly as shown in your SG Xpress account. Include your SGX mailbox number and pickup branch code, for example SGX2222 CH. Make sure the name on your order matches your account." },
-    { category: "Getting started", featured: false, q: "What if I forgot my SGX number?", a: "Contact Customer Service with your name, SGX number, tracking number and order invoice. Missing or incorrect details can delay identification and logging." },
+    { category: "Getting started", featured: false, q: "What if I forgot my SGX number?", a: "Contact Customer Service with the name on your account, the email address or phone number you registered with, and a tracking number for one of your packages. Once we confirm your account, we’ll give you your SGX number." },
     { category: "Getting started", featured: false, q: "What if I used an old warehouse address?", a: "Contact your seller or delivery carrier immediately to request redirection or assistance. Always check your SG Xpress account for the current address before ordering." },
     { category: "Shipping & tracking", featured: true, q: "My seller says “Delivered,” but my package is not on my dashboard. What should I do?", a: "Allow 24–48 hours for logging after your package is physically received at our warehouse. If it is still missing, send Customer Service your tracking number, delivery date, package contents and proof of delivery. We will investigate and provide an update." },
     { category: "Shipping & tracking", featured: true, q: "How often do you ship, and when can I collect my package?", a: "We normally operate three USA air shipments weekly, with flights on Tuesday, Thursday and Sunday. Expected collection days are Thursday, Saturday and Tuesday respectively, once Customs clearance and office processing are complete. Please refer to the shipping schedule on our About page and check your account for your package’s status." },
@@ -98,7 +99,7 @@ export const defaultContent: SiteContent = {
     { category: "Pickup & payments", featured: false, q: "How is my shipping charge calculated?", a: "Charges depend on the shipping service and your package’s billable weight (air) or volume (ocean), plus the processing fee where it applies. Items valued over US$100 also attract the SG Xpress Service Charge. Additional handling, Customs or other applicable charges may apply. Use our Calculator for an estimate, or request a quotation before shipping." },
     { category: "Pickup & payments", featured: true, q: "How is weight charged?", a: "0.1–0.5 lb is a flat J$500. Anything over 0.5 lb rounds up to the next full pound, so 0.6 lb is charged as 1 lb and 1.2 lb as 2 lb." },
     { category: "Pickup & payments", featured: false, q: "What if the weight or charge looks incorrect?", a: "Contact Customer Service with your tracking number and explain the concern. Ask for the recorded weight and invoice to be reviewed before collection." },
-    { category: "Pickup & payments", featured: true, q: "When should I pick up my package?", a: "Within 7 days of your ready-for-pickup message. After that a daily storage fee applies, and packages left for 30 days are auctioned to cover costs." },
+    { category: "Pickup & payments", featured: true, q: "When should I pick up my package?", a: "Within 7 days of your ready-for-pickup message. Seven calendar days free; charges begin on day eight, at a daily storage fee. Packages left for 30 days are auctioned to cover costs." },
     { category: "Pickup & payments", featured: false, q: "Which payment methods do you accept?", a: "We accept cash, bank transfer, card, Zelle and Cash App. Contact us for the correct payment details and instructions before making a transfer." },
     { category: "Pickup & payments", featured: false, q: "What should I do if an item is missing or damaged?", a: "Report it promptly with your tracking number, purchase invoice, photographs and a description of the issue. Keep the packaging for inspection. Claims are reviewed under our Terms and any applicable insurance coverage." },
     { category: "Pickup & payments", featured: false, q: "How does the SG Xpress loyalty card work?", a: "Collect nine stamps to receive free shipping on an eligible 1–5 lb package on your tenth shipment. Present your card at pickup to receive your stamp. Duty, storage and late-invoice fees are excluded." },
@@ -146,4 +147,5 @@ export const defaultContent: SiteContent = {
       { label: "Contact: Mr Hu / 周生", value: "+86 189 2421 5825 / +86 139 2883 9182" },
     ],
   },
+  pages: defaultPages(),
 };
