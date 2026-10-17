@@ -1,7 +1,7 @@
 # Pre-launch review: SG Xpress website
 
 **Date:** 15 October 2026
-**Tested on:** the exact production build, run locally as a staging stand-in. No staging server exists yet, so a final pass on the real staging server is still needed (see "Outstanding").
+**Tested on:** the exact production build, run locally as a staging stand-in. Final testing was done on localhost; no staging server pass is planned.
 
 **Result:** all critical and high-risk issues found are fixed and retested. The final regression run passed 23 of 23 checks.
 
@@ -37,16 +37,25 @@
 
 New: `deploy/rollback.sh` gives a one-command rollback. Restore steps are in `deploy/README.md`.
 
-## Outstanding (not blocking, but do before or soon after launch)
+## Outstanding (updated 17 Oct 2026)
 
-1. **Repeat the test pass on the real staging server** once it exists. The checklist is in `deploy/README.md` under "What to test on staging".
-2. **Turn on Cloudflare Turnstile** for the contact and careers forms. The current spam controls work, but a determined bot network could still send up to the hourly caps.
-3. **Set up SMTP** so messages and applications are also emailed. They're always saved in admin either way.
-4. **Off-server backups:** turn on your provider's server backups, or copy `/var/backups` elsewhere.
-5. **Lawyer review** of the Privacy notice (Data Protection Act 2020) and the new Terms sections.
-6. **Accepted low risks:**
-   - Lint tools (developer-only, not on the live site) carry a `braces` advisory with no fix yet.
-   - Login lockouts are kept in memory, so they reset if the site restarts.
-   - Five wrong passwords lock that username for 10 minutes, even for the real owner. This is deliberate.
-   - Next.js 16.4.1 was released yesterday; watch for a 16.4.x patch.
-7. **Use new passwords on the server:** don't reuse any password typed in chat earlier, and revoke the GitHub token that was pasted in chat (if not already done).
+Before launch:
+
+1. **Node.js on the server:** the cPanel host must enable Node.js 22 or 24 (minimum 20.9.0, set in `package.json`), or use a VPS.
+2. **Rebuild the upload package** with `deploy/package-cpanel.sh` right before uploading.
+3. **Email (SMTP):** send through the existing `info@sgxpressja.com` mailbox. Contact messages go to `info@sgxpressja.com`; job applications and CVs go to `hr@sgxpressja.com`. Settings are in `deploy/README.md`.
+4. **Turnstile:** create a new secret key in Cloudflare and set `TURNSTILE_SECRET_KEY` on the server.
+5. **DNS:** if the site moves off the cPanel host, change only the website records and leave the mail (MX) records alone.
+
+After launch:
+
+6. **Off-server backups:** turn on the host's backups, or copy the content and media backups elsewhere.
+7. **Google:** check Analytics (G-1C5HGP1Y8Y) and Search Console are receiving data, and submit `sgxpressja.com/sitemap.xml`.
+
+Decided by the owner (not doing): a staging-server test pass (tested on localhost instead), a new admin password, a separate website@ mailbox, a lawyer review, final content checks, removing `.env.vercel-preview`, and revoking the old GitHub token.
+
+Accepted low risks:
+- Lint tools (developer-only, not on the live site) carry a `braces` advisory with no fix yet.
+- Login lockouts are kept in memory, so they reset if the site restarts.
+- Five wrong passwords lock that username for 10 minutes, even for the real owner. This is deliberate.
+- Watch for Next.js 16.4.x patch releases.

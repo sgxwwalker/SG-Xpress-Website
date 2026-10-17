@@ -104,7 +104,7 @@ NEXT_PUBLIC_SITE_URL=https://staging.sgxpressja.com
 Then lock it down: `chown deploy:deploy` and `chmod 600` that file.
 
 Optional extras in the same file:
-- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, `CONTACT_TO` and `CAREERS_TO` email contact messages and job applications. They're always saved in /admin too. With the current email host: `SMTP_HOST=mail.sgxpressja.com`, `SMTP_PORT=465`, and a mailbox such as `website@sgxpressja.com` created in cPanel.
+- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, `CONTACT_TO` and `CAREERS_TO` email contact messages and job applications. They're always saved in /admin too. With the current email host: `SMTP_HOST=mail.sgxpressja.com`, `SMTP_PORT=465`, and the existing `info@sgxpressja.com` mailbox as `SMTP_USER`/`SMTP_FROM`. Messages go to `CONTACT_TO=info@sgxpressja.com`; job applications and CVs go to `CAREERS_TO=hr@sgxpressja.com`.
 - `TURNSTILE_SECRET_KEY` turns on Cloudflare's spam check. It needs the site key in `deploy/staging.env` too.
 
 ## Step 5: Nginx, the reviewer password and HTTPS (on the server, as root)
