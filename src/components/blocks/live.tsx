@@ -246,6 +246,7 @@ export function Calculator({ p, c, id, anchor, tone }: BlockProps<{ buttons: But
           fees={c.processingFees}
           serviceCharge={c.serviceCharge}
           ocean={c.ocean}
+          china={c.china}
           whatsappHref={whatsappUrl(c.contact.whatsapp, "Hi SG Xpress, I need a price for a package over 50 lb")}
         />
         {p.buttons.length ? (

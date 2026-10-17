@@ -4,19 +4,24 @@ import { useRef, useState, useSyncExternalStore } from "react";
 import {
   jmd,
   quoteAir,
+  quoteChinaAir,
+  quoteChinaSea,
   quoteOcean,
   usd,
+  type ChinaRule,
   type OceanRule,
   type ProcessingFees,
   type ServiceChargeRule,
 } from "@/lib/rates";
 import { track } from "./Analytics";
 
-type Mode = "air" | "ocean";
+type Mode = "air" | "ocean" | "china-air" | "china-sea";
+
+const HASH_MODES: Record<string, Mode> = { "#ocean": "ocean", "#china-air": "china-air", "#china-ocean": "china-sea" };
 
 const DISCLAIMER = "This is an estimate based on the information entered. Final charges are confirmed after shipment assessment.";
 
-// Opening /calculator#ocean shows the Ocean tab first.
+// Opening /calculator#ocean, #china-air or #china-ocean shows that tab first.
 function subscribeHash(cb: () => void) {
   window.addEventListener("hashchange", cb);
   return () => window.removeEventListener("hashchange", cb);
@@ -31,8 +36,19 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
+function Notes({ notes }: { notes: string[] }) {
+  if (!notes.length) return null;
+  return (
+    <ul className="space-y-1.5 border-t border-line px-4 py-3 text-sm md:px-5">
+      {notes.map((n, i) => (
+        <li key={i} className="flex gap-2"><span aria-hidden="true" className="font-bold text-gold-text">•</span><span>{n}</span></li>
+      ))}
+    </ul>
+  );
+}
+
 /**
- * Air and Ocean estimate with an itemised breakdown (freight, processing fee,
+ * USA Air, USA Ocean, China Air and China Ocean estimate with an itemised breakdown (freight, processing fee,
  * SG Xpress Service Charge, total). All maths comes from src/lib/rates.ts.
  */
 export function ShippingCalculator({
@@ -40,6 +56,7 @@ export function ShippingCalculator({
   fees,
   serviceCharge,
   ocean,
+  china,
   whatsappHref,
   id = "calc",
 }: {
@@ -47,18 +64,23 @@ export function ShippingCalculator({
   fees: ProcessingFees;
   serviceCharge: ServiceChargeRule;
   ocean: OceanRule;
+  china: ChinaRule & { airCalcNotes: string[]; seaCalcNotes: string[] };
   whatsappHref: string;
   id?: string;
 }) {
   const hash = useSyncExternalStore(subscribeHash, () => window.location.hash, () => "");
   const [chosen, setChosen] = useState<Mode | null>(null);
-  const mode: Mode = chosen ?? (hash === "#ocean" ? "ocean" : "air");
+  const mode: Mode = chosen ?? HASH_MODES[hash] ?? "air";
 
   const [weight, setWeight] = useState("2.3");
   const [airValue, setAirValue] = useState("");
   const [cuft, setCuft] = useState("3");
   const [oceanWeight, setOceanWeight] = useState("");
   const [oceanValue, setOceanValue] = useState("");
+  const [chinaWeight, setChinaWeight] = useState("2");
+  const [chinaAirValue, setChinaAirValue] = useState("");
+  const [cbm, setCbm] = useState("1");
+  const [chinaSeaValue, setChinaSeaValue] = useState("");
   const reported = useRef<Set<Mode>>(new Set());
 
   function used(m: Mode) {
@@ -72,6 +94,10 @@ export function ShippingCalculator({
   const air = quoteAir(lb, parseFloat(airValue) || 0, airRates, fees, serviceCharge);
   const volume = parseFloat(cuft);
   const sea = quoteOcean(volume, parseFloat(oceanWeight), parseFloat(oceanValue) || 0, ocean, serviceCharge);
+  const chinaLb = parseFloat(chinaWeight);
+  const chinaAir = quoteChinaAir(chinaLb, china, serviceCharge);
+  const chinaVolume = parseFloat(cbm);
+  const chinaSea = quoteChinaSea(chinaVolume, china, serviceCharge);
   const needsWeight = volume > 0 && volume < ocean.smallUnderCubicFeet;
 
   function setAirWeight(next: string) {
@@ -93,6 +119,10 @@ export function ShippingCalculator({
   if (sea && !sea.small) seaNote = sea.billedCuft === volume ? `Charged as ${sea.billedCuft} cu ft.` : `${volume} cu ft is charged as ${sea.billedCuft} cu ft.`;
   if (needsWeight) seaNote = `Under ${ocean.smallUnderCubicFeet} cu ft is charged by weight at ${jmd(ocean.smallPerLb)} per lb.`;
 
+  let chinaAirNote = "Enter a weight to see your estimate.";
+  if (chinaAir) chinaAirNote = chinaAir.billed === chinaLb ? `Charged as ${chinaAir.billed} lb.` : `${chinaLb} lb rounds up to ${chinaAir.billed} lb.`;
+  const chinaSeaNote = `${usd(china.seaPerCbmUsd)} per CBM (cubic metre).`;
+
   const label = "text-sm font-semibold";
   const field = "h-12 w-full min-w-0 rounded-xl border-2 border-line px-4 text-lg font-semibold text-navy focus:border-navy focus:outline-none";
   const tab = (m: Mode, text: string) => (
@@ -112,14 +142,59 @@ export function ShippingCalculator({
   return (
     <div className="overflow-hidden rounded-2xl border-2 border-navy bg-white">
       <div className="p-4 pb-0 md:p-5 md:pb-0">
-        <div role="tablist" aria-label="Shipping method" className="grid grid-cols-2 gap-1 rounded-xl bg-mist p-1">
+        <div role="tablist" aria-label="Shipping service" className="grid grid-cols-2 gap-1 rounded-xl bg-mist p-1 sm:grid-cols-4">
           {tab("air", "USA Air")}
           {tab("ocean", "USA Ocean")}
+          {tab("china-air", "China Air")}
+          {tab("china-sea", "China Ocean")}
         </div>
       </div>
 
       <div id={`${id}-panel`} role="tabpanel" aria-labelledby={`${id}-tab-${mode}`}>
-        {mode === "air" ? (
+        {mode === "china-air" || mode === "china-sea" ? (
+          (() => {
+            const sea = mode === "china-sea";
+            const q = sea ? chinaSea : chinaAir;
+            const value = sea ? chinaSeaValue : chinaAirValue;
+            const setValue = sea ? setChinaSeaValue : setChinaAirValue;
+            return (
+              <>
+                <div className="flex flex-col gap-4 p-4 md:p-5">
+                  {sea ? (
+                    <div>
+                      <label htmlFor={`${id}-cbm`} className={label}>Volume (CBM)</label>
+                      <input id={`${id}-cbm`} type="number" inputMode="decimal" min="0.01" step="0.01" value={cbm} onChange={(e) => { setCbm(e.target.value); used(mode); }} className={`${field} mt-2`} />
+                      <p className="mt-2 text-sm text-muted" aria-live="polite">{chinaSeaNote}</p>
+                    </div>
+                  ) : (
+                    <div>
+                      <label htmlFor={`${id}-china-weight`} className={label}>Package weight (lb)</label>
+                      <input id={`${id}-china-weight`} type="number" inputMode="decimal" min="0.1" step="0.1" value={chinaWeight} onChange={(e) => { setChinaWeight(e.target.value); used(mode); }} className={`${field} mt-2`} />
+                      <p className="mt-2 text-sm text-muted" aria-live="polite">{chinaAirNote}</p>
+                    </div>
+                  )}
+                  <div>
+                    <label htmlFor={`${id}-${mode}-value`} className={label}>Item value (US$)</label>
+                    <input id={`${id}-${mode}-value`} type="number" inputMode="decimal" min="0" step="0.01" placeholder="e.g. 150" value={value} onChange={(e) => { setValue(e.target.value); used(mode); }} className={`${field} mt-2`} />
+                  </div>
+                </div>
+
+                {q ? (
+                  <dl className="space-y-2.5 bg-mist p-4 md:p-5" aria-live="polite">
+                    <Row label={sea ? "Ocean freight" : "Air freight"} value={usd(q.freightUsd)} />
+                    {parseFloat(value) > 0 ? <Row label="Item value" value={usd(parseFloat(value))} /> : null}
+                    <div className="flex items-baseline justify-between border-t border-line pt-3">
+                      <dt className="text-lg font-semibold">Estimated total</dt>
+                      <dd className="text-2xl font-extrabold">{usd(q.freightUsd)}</dd>
+                    </div>
+                    <p className="text-right text-sm text-muted">≈ {jmd(q.freightJmd)} at J${serviceCharge.jmdPerUsd} per US$1</p>
+                  </dl>
+                ) : null}
+                <Notes notes={sea ? china.seaCalcNotes : china.airCalcNotes} />
+              </>
+            );
+          })()
+        ) : mode === "air" ? (
           <>
             <div className="flex flex-col gap-4 p-4 md:p-5">
               <div>

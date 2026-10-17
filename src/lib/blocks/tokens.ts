@@ -12,6 +12,7 @@ export const TOKENS: { token: string; label: string; value: (c: SiteContent) => 
   { token: "{ocean transit}", label: "USA ocean transit time", value: (c) => c.ocean.transit },
   { token: "{ocean small limit}", label: "Ocean small-item limit (cubic feet)", value: (c) => String(c.ocean.smallUnderCubicFeet) },
   { token: "{china air price}", label: "China air price per lb (US$)", value: (c) => `US$${c.china.airPerLbUsd}` },
+  { token: "{china sea price}", label: "China sea price per CBM (US$)", value: (c) => `US$${c.china.seaPerCbmUsd}` },
   { token: "{china air transit}", label: "China air transit time", value: (c) => c.china.airTransit },
   { token: "{china sea transit}", label: "China sea transit time", value: (c) => c.china.seaTransit },
   { token: "{storage free days}", label: "Free storage days", value: (c) => String(c.fees.storageFreeDays) },

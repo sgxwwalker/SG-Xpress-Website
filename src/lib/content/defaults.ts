@@ -44,7 +44,17 @@ export const defaultContent: SiteContent = {
     { days: "Sunday", hours: "Closed" },
   ],
   ocean: { perCubicFootUsd: 20, smallPerLb: 400, smallUnderCubicFeet: 1, transit: "2–3 weeks" },
-  china: { airPerLbUsd: 14, airTransit: "20–30 days", seaTransit: "55–60 days" },
+  china: {
+    airPerLbUsd: 14,
+    seaPerCbmUsd: 850,
+    airTransit: "20–30 days",
+    seaTransit: "55–60 days",
+    airCalcNotes: [],
+    seaCalcNotes: [
+      "Service charge for Dangerous Goods is charged separately depending on your cargo details.",
+      "Local transportation quoted separately based on shipment size and destination.",
+    ],
+  },
   hours: {
     weekdays: "Mon–Fri 9:30am–5:30pm",
     saturday: "Sat 10:30am–3:30pm",

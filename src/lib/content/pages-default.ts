@@ -84,7 +84,7 @@ export function defaultPages(): Page[] {
         overLabel: "10 lb and over",
         otherCaption: "Other charges",
         lateLabel: "Late invoice (after clearance day)",
-        storageLabel: "Storage ({storage free days} calendar days free; charges begin on day {storage charge day})",
+        storageLabel: "Storage (first {storage free days} days free)",
         note: "Packages not collected within {auction days} days are auctioned to cover costs.",
       }, { anchor: "fees" }],
       ["oceanRates", {
@@ -113,11 +113,11 @@ export function defaultPages(): Page[] {
       ["cta", { heading: "Start shipping today", text: SIGN_UP_CTA_TEXT, buttons: [SIGN_UP], footnote: "Rates may change without notice. Questions? [Read the FAQs](/faqs)." }],
     ]),
 
-    builtin("calculator", "Calculator", "Shipping Cost Calculator, USA to Jamaica", "Know the cost before you ship. Estimate USA Air or Ocean shipping to Jamaica, with shipping, fees and service charge shown separately.", [
+    builtin("calculator", "Calculator", "Shipping Cost Calculator, USA & China to Jamaica", "Know the cost before you ship. Estimate USA or China air and ocean shipping to Jamaica, with shipping, fees and service charge shown separately.", [
       ["hero", { eyebrow: "Shipping cost calculator", heading: "Know the cost before you ship.", text: "Enter a weight or a volume and we'll break it down for you: shipping, fees and service charge." }],
       ["calculator", {
         buttons: [btn("Sign up free", REGISTER, "gold"), btn("Full rate sheet", page("/rates"), "outline")],
-        footnote: "Shipping something bigger, a barrel or from China? [Ask us for a quote](/contact).",
+        footnote: "Shipping something bigger or a barrel? [Ask us for a quote](/contact).",
       }],
     ]),
 

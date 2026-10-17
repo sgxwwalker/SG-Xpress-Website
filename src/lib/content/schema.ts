@@ -121,8 +121,18 @@ export const contentSchema = z.object({
   }),
   china: z.object({
     airPerLbUsd: money,
+    seaPerCbmUsd: money.default(850),
     airTransit: shortText.min(1),
     seaTransit: shortText.min(1),
+    // Short notes shown under the China estimate in the calculator.
+    airCalcNotes: z.array(shortText.min(1)).max(6).default([]),
+    seaCalcNotes: z
+      .array(shortText.min(1))
+      .max(6)
+      .default([
+        "Service charge for Dangerous Goods is charged separately depending on your cargo details.",
+        "Local transportation quoted separately based on shipment size and destination.",
+      ]),
   }),
   hours: z.object({
     weekdays: shortText.min(1),

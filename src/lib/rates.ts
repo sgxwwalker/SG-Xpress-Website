@@ -91,6 +91,33 @@ export function quoteOcean(cuft: number, weightLb: number, valueUsd: number, oce
   return { small: false, billedCuft, billedLb: 0, freightUsd, freight, serviceCharge, total: freight + serviceCharge };
 }
 
+export interface ChinaRule {
+  airPerLbUsd: number;
+  seaPerCbmUsd: number;
+}
+
+export interface ChinaQuote {
+  billed: number; // whole pounds (air) or CBM to 2 decimals (sea)
+  freightUsd: number;
+  freightJmd: number; // approximate, at the exchange rate
+}
+
+/** China Air: whole pounds (1 lb minimum) × US$ per lb. The item value doesn't change it. */
+export function quoteChinaAir(lb: number, china: ChinaRule, rule: ServiceChargeRule): ChinaQuote | null {
+  if (!(lb > 0)) return null;
+  const billed = Math.max(1, Math.ceil(Number(lb.toFixed(4))));
+  const freightUsd = billed * china.airPerLbUsd;
+  return { billed, freightUsd, freightJmd: Math.round(freightUsd * rule.jmdPerUsd) };
+}
+
+/** China Ocean: CBM (to 2 decimals) × US$ per CBM. The item value doesn't change it. */
+export function quoteChinaSea(cbm: number, china: ChinaRule, rule: ServiceChargeRule): ChinaQuote | null {
+  if (!(cbm > 0)) return null;
+  const billed = Math.max(0.01, Math.ceil(Number((cbm * 100).toFixed(4))) / 100);
+  const freightUsd = Math.round(billed * china.seaPerCbmUsd * 100) / 100;
+  return { billed, freightUsd, freightJmd: Math.round(freightUsd * rule.jmdPerUsd) };
+}
+
 export function jmd(n: number): string {
   return `J$${n.toLocaleString("en-US")}`;
 }

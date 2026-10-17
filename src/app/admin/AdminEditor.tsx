@@ -136,6 +136,7 @@ export function AdminEditor({
       const clean: SiteContent = {
         ...c,
         contact: { ...c.contact, phones: lines(c.contact.phones) },
+        china: { ...c.china, airCalcNotes: lines(c.china.airCalcNotes), seaCalcNotes: lines(c.china.seaCalcNotes) },
         jobs: c.jobs.map((j) => ({ ...j, responsibilities: lines(j.responsibilities), requirements: lines(j.requirements) })),
       };
       const res = await save(clean, version);
@@ -446,10 +447,20 @@ export function AdminEditor({
             </section>
             <section className={`${card} flex flex-col gap-4`}>
               <h2 className="text-xl font-bold">China Direct</h2>
-              <div className="grid gap-4 md:grid-cols-3">
-                <Field label="Air price (US$ per lb)"><NumberInput value={c.china.airPerLbUsd} onChange={(n) => edit((d) => { d.china.airPerLbUsd = n; })} /></Field>
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field label="Air price (US$ per lb)" hint="Weight rounds up to the next whole pound."><NumberInput value={c.china.airPerLbUsd} onChange={(n) => edit((d) => { d.china.airPerLbUsd = n; })} /></Field>
                 <Field label="Air transit"><input className={input} value={c.china.airTransit} onChange={(e) => edit((d) => { d.china.airTransit = e.target.value; })} /></Field>
+                <Field label="Sea price (US$ per CBM)" hint={`≈ ${jmd(Math.round(c.china.seaPerCbmUsd * c.serviceCharge.jmdPerUsd))} at the exchange rate above`}><NumberInput value={c.china.seaPerCbmUsd} onChange={(n) => edit((d) => { d.china.seaPerCbmUsd = n; })} /></Field>
                 <Field label="Sea transit"><input className={input} value={c.china.seaTransit} onChange={(e) => edit((d) => { d.china.seaTransit = e.target.value; })} /></Field>
+              </div>
+              <p className="text-sm text-muted">The calculator shows China prices in US$ (with the J$ amount beside it). The item value customers enter doesn&apos;t change China prices, and there is no service charge on China shipments in the calculator.</p>
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field label="Calculator notes: China Air" hint="One note per line. Shown under the China Air estimate.">
+                  <textarea rows={3} className={`${input} h-auto py-2`} value={c.china.airCalcNotes.join("\n")} onChange={(e) => edit((d) => { d.china.airCalcNotes = e.target.value.split("\n"); })} />
+                </Field>
+                <Field label="Calculator notes: China Ocean" hint="One note per line. Shown under the China Ocean estimate.">
+                  <textarea rows={3} className={`${input} h-auto py-2`} value={c.china.seaCalcNotes.join("\n")} onChange={(e) => edit((d) => { d.china.seaCalcNotes = e.target.value.split("\n"); })} />
+                </Field>
               </div>
             </section>
           </>
