@@ -194,6 +194,10 @@ Saved content, staff, messages and CVs live in `shared/data`, so a rollback neve
 **Undo a bad admin save:** each save keeps the previous version in `shared/data/backups/`.
 Copy the one you want over `shared/data/content.json`. No restart is needed; pages read it on the next visit.
 
+**Superadmin can't log in and can't reset by email:** delete `superadmin.json` from the
+data folder (next to `content.json`; on cPanel, the `sgx-data` folder). The password from the
+`ADMIN_PASSWORD_HASH_B64` server setting works again. No restart is needed.
+
 **Restore everything** (content, staff, messages, applications, CVs) from a nightly archive:
 
 ```bash

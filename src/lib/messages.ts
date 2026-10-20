@@ -1,6 +1,6 @@
 import { promises as fs } from "fs";
 import path from "path";
-import nodemailer from "nodemailer";
+import { sendMail } from "./mailer";
 
 // Contact-form messages: always saved to a JSON file (read in /admin → Messages),
 // and also emailed when SMTP settings are present in the environment.
@@ -54,31 +54,20 @@ export async function deleteMessage(id: string): Promise<void> {
 
 /** Emails the message if SMTP is configured. Returns false (without throwing) when it isn't or sending fails. */
 export async function emailMessage(msg: ContactMessage): Promise<boolean> {
-  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM, CONTACT_TO } = process.env;
-  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) return false;
-  try {
-    const port = Number(SMTP_PORT || 587);
-    const transport = nodemailer.createTransport({ host: SMTP_HOST, port, secure: port === 465, auth: { user: SMTP_USER, pass: SMTP_PASS } });
-    await transport.sendMail({
-      from: SMTP_FROM || SMTP_USER,
-      to: CONTACT_TO || "info@sgxpressja.com",
-      replyTo: `${msg.name} <${msg.email}>`,
-      subject: `Website message: ${msg.topic} from ${msg.name}`,
-      text: [
-        `Name: ${msg.name}`,
-        `Email: ${msg.email}`,
-        `Phone: ${msg.phone || "—"}`,
-        `SGX number: ${msg.sgxNumber || "—"}`,
-        `Topic: ${msg.topic}`,
-        "",
-        msg.message,
-        "",
-        `Received ${msg.receivedAt}. Also saved in the website admin under Messages.`,
-      ].join("\n"),
-    });
-    return true;
-  } catch (err) {
-    console.error("Contact email failed; the message is still saved in admin.", err);
-    return false;
-  }
+  return sendMail({
+    to: process.env.CONTACT_TO || "info@sgxpressja.com",
+    replyTo: `${msg.name} <${msg.email}>`,
+    subject: `Website message: ${msg.topic} from ${msg.name}`,
+    text: [
+      `Name: ${msg.name}`,
+      `Email: ${msg.email}`,
+      `Phone: ${msg.phone || "—"}`,
+      `SGX number: ${msg.sgxNumber || "—"}`,
+      `Topic: ${msg.topic}`,
+      "",
+      msg.message,
+      "",
+      `Received ${msg.receivedAt}. Also saved in the website admin under Messages.`,
+    ].join("\n"),
+  });
 }

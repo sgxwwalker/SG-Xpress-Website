@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { clientIp } from "@/lib/client-ip";
 import { describeChanges, lastSave, logActivity } from "@/lib/activity";
@@ -12,7 +13,11 @@ import { contentVersion, getContent, listVersions, readVersion, saveContent } fr
 import { checkUpload, deleteMedia as removeMedia, MAX_UPLOAD_BYTES, saveMedia, toLibraryImage, updateMediaAlt, type LibraryImage } from "@/lib/media";
 import { deleteMessage as removeMessage, readMessages } from "@/lib/messages";
 import { APPLICATION_STATUSES, deleteApplication as removeApplication, setApplicationStatus, type ApplicationStatus } from "@/lib/applications";
-import { changeOwnPassword as setOwnPassword, createStaff, findActiveUser, summarise, updateStaff, verifyLogin, type StaffSummary } from "@/lib/staff";
+import { mailConfigured, mailToConsole, sendMail } from "@/lib/mailer";
+import { createResetToken, RESET_MINUTES_TEXT, redeemResetToken } from "@/lib/password-reset";
+import {
+  changeOwnPassword as setOwnPassword, createStaff, findActiveUser, findForReset, setEmail, summarise, updateStaff, verifyLogin, type StaffSummary,
+} from "@/lib/staff";
 
 // ---- Logging in ----
 
@@ -49,6 +54,92 @@ export async function login(_prev: { error?: string } | undefined, formData: For
   await startSession(user);
   await logActivity(user, "Logged in");
   redirect("/admin");
+}
+
+// ---- Forgotten passwords ----
+
+// At most 3 reset emails an hour per username/email typed, and per connection.
+const resetRequests = new Map<string, number[]>();
+const RESET_LIMIT = 3;
+const RESET_WINDOW_MS = 60 * 60 * 1000;
+
+export type ResetRequestState = { kind: "sent" | "error"; text: string };
+
+async function siteOrigin(): Promise<string> {
+  const configured = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/+$/, "");
+  if (configured) return configured;
+  const h = await headers();
+  return `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host") ?? "localhost:3000"}`;
+}
+
+export async function requestPasswordReset(_prev: ResetRequestState | undefined, formData: FormData): Promise<ResetRequestState> {
+  if (READ_ONLY) return { kind: "error", text: READ_ONLY_MESSAGE };
+  if (!mailConfigured() && !mailToConsole()) {
+    return { kind: "error", text: "Password reset by email isn't set up on this website yet. Ask the superadmin to reset your password." };
+  }
+  const login = String(formData.get("login") ?? "").trim().toLowerCase().slice(0, 200);
+  if (!login) return { kind: "error", text: "Enter your username or email address." };
+
+  const now = Date.now();
+  const keys = [`r:${login}`, `ip:${await clientIp()}`];
+  const recent = keys.map((k) => {
+    const list = (resetRequests.get(k) ?? []).filter((t) => now - t < RESET_WINDOW_MS);
+    resetRequests.set(k, list);
+    return list;
+  });
+  if (recent.some((list) => list.length >= RESET_LIMIT)) {
+    return { kind: "error", text: "Too many reset requests. Please wait an hour and try again, or ask the superadmin." };
+  }
+  recent.forEach((list) => list.push(now));
+
+  const user = await findForReset(login);
+  if (user?.email) {
+    const link = `${await siteOrigin()}/admin/reset?token=${await createResetToken(user.id)}`;
+    const mail = {
+      to: user.email,
+      subject: "Reset your SG Xpress website password",
+      text: [
+        `Hi ${user.name},`,
+        "",
+        "Someone (hopefully you) asked to reset the password for your SG Xpress website admin account.",
+        "",
+        "Choose a new password here:",
+        link,
+        "",
+        `This link works once and expires in ${RESET_MINUTES_TEXT}.`,
+        "",
+        "If you didn't ask for this, ignore this email; your password hasn't changed.",
+      ].join("\n"),
+    };
+    if (mailToConsole()) console.log(`\n[password reset email, not sent: no SMTP settings]\nTo: ${mail.to}\n${mail.text}\n`);
+    else await sendMail(mail);
+    await logActivity(user, "Asked for a password reset email");
+  }
+  await new Promise((r) => setTimeout(r, 800)); // same wait whether or not the account exists
+  return {
+    kind: "sent",
+    text: "If that account has an email address, we've sent it a link to reset the password. Check your inbox (and spam folder). The link expires in " + RESET_MINUTES_TEXT + ".",
+  };
+}
+
+export async function resetPassword(_prev: { error?: string; expired?: boolean } | undefined, formData: FormData): Promise<{ error?: string; expired?: boolean }> {
+  if (READ_ONLY) return { error: READ_ONLY_MESSAGE };
+  const token = String(formData.get("token") ?? "");
+  const password = String(formData.get("password") ?? "");
+  if (password !== String(formData.get("confirm") ?? "")) return { error: "The two passwords don't match." };
+  let userId: string | null;
+  try {
+    userId = await redeemResetToken(token, password);
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
+  if (!userId) return { expired: true };
+  const user = await findActiveUser(userId);
+  if (user) {
+    const { pv: _pv, ...who } = user; // eslint-disable-line @typescript-eslint/no-unused-vars
+    await logActivity(who, "Reset their password by email");
+  }
+  redirect("/admin/login?reset=1");
 }
 
 export async function logout(): Promise<void> {
@@ -179,7 +270,7 @@ async function requireSuperadmin() {
   return user?.role === "superadmin" ? user : null;
 }
 
-export async function addStaff(input: { name: string; username: string; password: string }): Promise<AccountResult> {
+export async function addStaff(input: { name: string; username: string; password: string; email?: string }): Promise<AccountResult> {
   const sa = await requireSuperadmin();
   if (!sa) return { ok: false, error: "Only the superadmin can add staff." };
   if (READ_ONLY) return { ok: false, error: READ_ONLY_MESSAGE };
@@ -192,13 +283,21 @@ export async function addStaff(input: { name: string; username: string; password
   }
 }
 
-export async function manageStaff(id: string, change: { active?: boolean; password?: string; remove?: boolean }): Promise<AccountResult> {
+export async function manageStaff(id: string, change: { active?: boolean; password?: string; remove?: boolean; email?: string }): Promise<AccountResult> {
   const sa = await requireSuperadmin();
   if (!sa) return { ok: false, error: "Only the superadmin can manage staff." };
   if (READ_ONLY) return { ok: false, error: READ_ONLY_MESSAGE };
   try {
     const rec = await updateStaff(id, change);
-    const what = change.remove ? "Removed a staff account" : change.password ? "Reset a staff password" : change.active ? "Switched a staff account on" : "Switched a staff account off";
+    const what = change.remove
+      ? "Removed a staff account"
+      : change.password
+        ? "Reset a staff password"
+        : change.email !== undefined
+          ? "Changed a staff email"
+          : change.active
+            ? "Switched a staff account on"
+            : "Switched a staff account off";
     await logActivity(sa, what, [`${rec.name} (${rec.username})`]);
     return { ok: true, staff: change.remove ? undefined : summarise(rec) };
   } catch (e) {
@@ -210,9 +309,6 @@ export async function changeMyPassword(current: string, next: string): Promise<A
   const user = await currentUser();
   if (!user) return { ok: false, error: "Your session has ended. Log in again." };
   if (READ_ONLY) return { ok: false, error: READ_ONLY_MESSAGE };
-  if (user.role === "superadmin") {
-    return { ok: false, error: `The superadmin password is set on the server. Run: npm run hash-password` };
-  }
   try {
     await setOwnPassword(user.id, current, next);
     // The change ends every other session; keep this one signed in.
@@ -220,6 +316,19 @@ export async function changeMyPassword(current: string, next: string): Promise<A
     if (fresh) await startSession(fresh);
     await logActivity(user, "Changed their password");
     return { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}
+
+export async function setMyEmail(email: string): Promise<{ ok: true; email: string } | { ok: false; error: string }> {
+  const user = await currentUser();
+  if (!user) return { ok: false, error: "Your session has ended. Log in again." };
+  if (READ_ONLY) return { ok: false, error: READ_ONLY_MESSAGE };
+  try {
+    const saved = await setEmail(user.id, email);
+    await logActivity(user, saved ? "Changed their email" : "Removed their email", saved ? [saved] : []);
+    return { ok: true, email: saved };
   } catch (e) {
     return { ok: false, error: (e as Error).message };
   }

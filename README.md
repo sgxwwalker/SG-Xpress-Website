@@ -24,11 +24,19 @@ paste the printed line into `.env`. Generate `SESSION_SECRET` with
 ## Admin accounts
 
 - **Superadmin** (one only): set on the server with `SUPERADMIN_USERNAME`, `SUPERADMIN_NAME`
-  and `ADMIN_PASSWORD_HASH_B64`. Can do everything, plus add, switch off, remove and reset
-  staff accounts, and see the **Activity** log.
+  and `ADMIN_PASSWORD_HASH_B64` (the starting password). Can do everything, plus add, switch off,
+  remove and reset staff accounts, and see the **Activity** log. Its email, and any password it
+  changes or resets in the admin, are saved in `superadmin.json` next to content.json.
 - **Staff**: created by the superadmin in /admin → Staff. Can edit all content, read
   messages and change their own password. Switching an account off logs that person out
   straight away.
+- **Forgotten passwords:** every account can add an email under My account (the superadmin
+  can also set staff emails). "Forgot password?" on the login page emails a one-time link
+  (valid 30 minutes, max 3 requests an hour) through the SMTP settings. Resetting ends the
+  account's other sessions. Without SMTP on a developer's computer, the email is printed in the
+  terminal running `npm run dev`.
+- **Superadmin locked out completely** (no email, or no access to it): on the server, delete
+  `superadmin.json` next to content.json. The password from `ADMIN_PASSWORD_HASH_B64` works again.
 - **Activity log** (`activity.json`): logins, logouts, every save with the exact changes
   (e.g. "Air rate 3 lb: 1,800 → 1,850"), deleted messages and account changes.
 - If two people edit at once, the second save is refused with a message, so nobody

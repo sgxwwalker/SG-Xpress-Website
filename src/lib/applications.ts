@@ -1,6 +1,6 @@
 import { promises as fs } from "fs";
 import path from "path";
-import nodemailer from "nodemailer";
+import { sendMail } from "./mailer";
 import { dataPath, readJson, writeJson } from "./data-files";
 
 // Job applications. Details go in applications.json and CVs in an "applications" folder,
@@ -90,32 +90,21 @@ export async function readCv(id: string): Promise<{ app: Application; bytes: Buf
 
 /** Emails the application (CV attached) when SMTP is configured. Never throws. */
 export async function emailApplication(app: Application, cvBytes: Uint8Array): Promise<boolean> {
-  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM, CONTACT_TO, CAREERS_TO } = process.env;
-  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) return false;
-  try {
-    const port = Number(SMTP_PORT || 587);
-    const transport = nodemailer.createTransport({ host: SMTP_HOST, port, secure: port === 465, auth: { user: SMTP_USER, pass: SMTP_PASS } });
-    await transport.sendMail({
-      from: SMTP_FROM || SMTP_USER,
-      to: CAREERS_TO || CONTACT_TO || "info@sgxpressja.com",
-      replyTo: `${app.name} <${app.email}>`,
-      subject: `Job application: ${app.jobTitle} from ${app.name}`,
-      text: [
-        `Position: ${app.jobTitle}`,
-        `Name: ${app.name}`,
-        `Email: ${app.email}`,
-        `Phone: ${app.phone}`,
-        `Parish: ${app.parish || "—"}`,
-        "",
-        app.message || "(No cover note)",
-        "",
-        "CV attached. Also saved in the website admin under Applications.",
-      ].join("\n"),
-      attachments: [{ filename: app.cv.fileName, content: Buffer.from(cvBytes), contentType: app.cv.type }],
-    });
-    return true;
-  } catch (err) {
-    console.error("Application email failed; it is still saved in admin.", err);
-    return false;
-  }
+  return sendMail({
+    to: process.env.CAREERS_TO || process.env.CONTACT_TO || "info@sgxpressja.com",
+    replyTo: `${app.name} <${app.email}>`,
+    subject: `Job application: ${app.jobTitle} from ${app.name}`,
+    text: [
+      `Position: ${app.jobTitle}`,
+      `Name: ${app.name}`,
+      `Email: ${app.email}`,
+      `Phone: ${app.phone}`,
+      `Parish: ${app.parish || "—"}`,
+      "",
+      app.message || "(No cover note)",
+      "",
+      "CV attached. Also saved in the website admin under Applications.",
+    ].join("\n"),
+    attachments: [{ filename: app.cv.fileName, content: Buffer.from(cvBytes), contentType: app.cv.type }],
+  });
 }

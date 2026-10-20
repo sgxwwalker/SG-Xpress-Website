@@ -40,7 +40,7 @@ const TABS: { id: Tab; label: string; group: Group; description: string; icon: R
   { id: "history", label: "Version history", group: "Admin", icon: <IconHistory className="h-5 w-5" />, description: "Earlier versions of the website content. Restore one if a change went wrong." },
   { id: "staff", label: "Staff", group: "Admin", icon: <IconUsers className="h-5 w-5" />, description: "Add staff, reset passwords and switch accounts off.", superadminOnly: true },
   { id: "activity", label: "Activity", group: "Admin", icon: <IconClock className="h-5 w-5" />, description: "Who logged in, what they changed and when.", superadminOnly: true },
-  { id: "account", label: "My account", group: "Account", icon: <IconUser className="h-5 w-5" />, description: "Your login details and password." },
+  { id: "account", label: "My account", group: "Account", icon: <IconUser className="h-5 w-5" />, description: "Your email, login details and password." },
 ];
 const GROUPS: Group[] = ["Inbox", "Website content", "Admin"];
 
@@ -264,6 +264,12 @@ export function AdminEditor({
 
       <div className="flex min-w-0 flex-col">
       <main className={`mx-auto flex w-full flex-1 flex-col gap-4 px-4 py-6 md:px-8 md:py-10 ${tab === "pages" ? "max-w-[1600px]" : "max-w-4xl"}`}>
+        {!user.email && tab !== "account" ? (
+          <p role="status" className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl bg-gold-soft px-4 py-3 text-sm text-navy">
+            <span>Add your email so you can reset your password if you forget it.</span>
+            <button type="button" onClick={() => go("account")} className="font-semibold underline underline-offset-2">Go to My account</button>
+          </p>
+        ) : null}
         <div className="mb-2 flex items-start gap-3">
           <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-navy text-gold">{current.icon}</span>
           <div>

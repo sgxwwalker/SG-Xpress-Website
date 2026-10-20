@@ -13,7 +13,7 @@ function when(iso?: string) {
 
 export function StaffPanel({ initial, superadminUsername }: { initial: StaffSummary[]; superadminUsername: string }) {
   const [staff, setStaff] = useState(initial);
-  const [form, setForm] = useState({ name: "", username: "", password: "" });
+  const [form, setForm] = useState({ name: "", username: "", password: "", email: "" });
   const [msg, setMsg] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
   const [pending, start] = useTransition();
 
@@ -27,22 +27,22 @@ export function StaffPanel({ initial, superadminUsername }: { initial: StaffSumm
       <section className={`${card} flex flex-col gap-1`}>
         <h2 className="text-xl font-bold">Superadmin</h2>
         <p className="text-sm text-muted">
-          Username <strong className="text-navy">{superadminUsername}</strong>. This account is set on the server and can&apos;t be changed or removed here. It is
-          the only account that can manage staff and see the activity log.
+          Username <strong className="text-navy">{superadminUsername}</strong>. This account can&apos;t be switched off or removed. It is the only account that
+          can manage staff and see the activity log. Set its email and password under My account.
         </p>
       </section>
 
       <section className={`${card} flex flex-col gap-4`}>
         <h2 className="text-xl font-bold">Add a staff member</h2>
         <form
-          className="grid gap-3 md:grid-cols-[1fr_1fr_1fr_auto] md:items-end"
+          className="grid gap-3 md:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_1fr_auto] lg:items-end"
           onSubmit={(e) => {
             e.preventDefault();
             run(async () => {
               const res = await addStaff(form);
               if (res.ok && res.staff) {
                 setStaff((s) => [...s, res.staff!]);
-                setForm({ name: "", username: "", password: "" });
+                setForm({ name: "", username: "", password: "", email: "" });
                 setMsg({ kind: "ok", text: `Added ${res.staff.name}. Give them their username and password privately.` });
               } else if (!res.ok) setMsg({ kind: "error", text: res.error });
             });
@@ -60,11 +60,15 @@ export function StaffPanel({ initial, superadminUsername }: { initial: StaffSumm
             Starting password
             <input className={input} type="text" autoComplete="off" minLength={10} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required />
           </label>
+          <label className="flex flex-col gap-1 text-sm font-semibold">
+            Email (for password resets)
+            <input className={input} type="email" maxLength={200} value={form.email} autoCapitalize="none" spellCheck={false} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+          </label>
           <button type="submit" disabled={pending} className="h-11 rounded-xl bg-navy px-5 font-semibold text-white disabled:opacity-60">
             Add staff
           </button>
         </form>
-        <p className="text-xs text-muted">At least 10 characters. Staff can change it themselves under My account.</p>
+        <p className="text-xs text-muted">Password: at least 10 characters. Staff can change it themselves under My account. With an email, they can also reset a forgotten password from the login page.</p>
         {msg ? <p role="status" className={`text-sm font-medium ${msg.kind === "error" ? "text-red-700" : "text-green-800"}`}>{msg.text}</p> : null}
       </section>
 
@@ -78,8 +82,27 @@ export function StaffPanel({ initial, superadminUsername }: { initial: StaffSumm
                 {s.name} <span className="font-normal text-muted">· {s.username}</span>
                 {!s.active ? <span className="ml-2 rounded-full bg-mist px-2 py-0.5 text-xs font-semibold text-muted">Switched off</span> : null}
               </p>
+              <p className="text-xs text-muted">{s.email ? s.email : "No email (can't reset their own password)"}</p>
               <p className="text-xs text-muted">Last login: {when(s.lastLoginAt)} · Added {when(s.createdAt)} by {s.createdBy}</p>
             </div>
+            <button
+              type="button"
+              disabled={pending}
+              className="h-9 rounded-lg border border-line px-3 text-sm font-semibold"
+              onClick={() => {
+                const next = prompt(`Email for ${s.name} (leave empty to remove):`, s.email ?? "");
+                if (next === null) return;
+                run(async () => {
+                  const res = await manageStaff(s.id, { email: next });
+                  if (res.ok && res.staff) {
+                    setStaff((list) => list.map((x) => (x.id === s.id ? res.staff! : x)));
+                    setMsg({ kind: "ok", text: `Email updated for ${s.name}.` });
+                  } else if (!res.ok) setMsg({ kind: "error", text: res.error });
+                });
+              }}
+            >
+              {s.email ? "Change email" : "Add email"}
+            </button>
             <button
               type="button"
               disabled={pending}
