@@ -160,7 +160,7 @@ export function defaultPages(): Page[] {
         intro: "Use the address that matches what we confirmed. Put SGX and your full name on every package.",
         airImage: img("/images/label-air-2026-10-20.jpg", "China Air Warehouse shipping label template", 1350, 1350),
         seaImage: img("/images/label-sea-2026-10-20.jpg", "China Sea Warehouse shipping label template", 1350, 1350),
-        dgImage: img("/images/label-dg-2026-10-20.jpg", "Dangerous Goods warehouse shipping label template", 1350, 1350),
+        dgImage: img("/images/label-dg-2026-10-20b.jpg", "Dangerous Goods warehouse shipping label template", 1350, 1350),
       }, { anchor: "address" }],
       ["faq", { heading: "China questions", source: "category", category: "China & ocean shipping", exclude: "barrel" }],
       ["cta", {
