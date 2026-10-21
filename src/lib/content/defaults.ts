@@ -152,9 +152,9 @@ export const defaultContent: SiteContent = {
     dg: [
       MARK,
       { label: "Entrance No. / 入仓号", value: "MS-5089" },
-      { label: "Address (English)", value: "No. 9, Gaodun Industrial Zone, Beisha Village, Lishui Town, Nanhai District, Foshan City, Guangdong Province, China" },
-      { label: "Address (Chinese) / 收货地址", value: "佛山市南海区里水镇北沙村高墩工业区9号" },
-      { label: "Contact: Mr Hu / 周生", value: "+86 189 2421 5825 / +86 139 2883 9182" },
+      { label: "Address (English)", value: "A18 Yundong Garden, No. 333 South Baiyun Avenue, Baiyun District, Guangzhou, China" },
+      { label: "Address (Chinese) / 收货地址", value: "广州市白云区白云大道南333号云东花园A18" },
+      { label: "Contact: Zhou / 周生", value: "+86 135 2783 9367 / +86 185 2051 3890" },
     ],
   },
   pages: defaultPages(),
