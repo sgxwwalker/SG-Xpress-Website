@@ -235,7 +235,7 @@ export function ShippingCalculator({
 
             {air && air.total === null ? (
               <div className="space-y-3 bg-gold-soft p-4 md:p-5">
-                <p><strong>Over 50 lb?</strong> We price these one by one. The processing fee is {jmd(air.fee)}.</p>
+                <p><strong>Over 50 lb?</strong> Message us on WhatsApp for a price. A {jmd(air.fee)} processing fee also applies.</p>
                 <a href={whatsappHref} data-track="whatsapp_click" data-track-location="calculator" className="flex min-h-12 items-center justify-center rounded-xl bg-navy font-semibold text-white">
                   Get a price on WhatsApp
                 </a>
