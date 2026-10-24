@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import Link from "next/link";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { sendContactMessage, type ContactState } from "@/app/(site)/contact/actions";
 import { CONTACT_TOPICS } from "@/lib/contact";
 import { track } from "./Analytics";
@@ -10,7 +11,13 @@ import { Turnstile } from "./Turnstile";
 const inputCls =
   "w-full rounded-xl border-2 border-line bg-white px-4 text-base text-navy placeholder:text-[#8a94a8] focus:border-navy focus:outline-none aria-[invalid=true]:border-red-600";
 
+/** The form, plus a fresh empty copy each time someone chooses "Send another message". */
 export function ContactForm() {
+  const [round, setRound] = useState(0);
+  return <ContactFormRound key={round} onAnother={() => setRound((r) => r + 1)} />;
+}
+
+function ContactFormRound({ onAnother }: { onAnother: () => void }) {
   const [state, action, pending] = useActionState<ContactState | undefined, FormData>(sendContactMessage, undefined);
   // When the form appeared (set after load, so the page itself can stay static).
   // Kept across error re-renders, because React clears form fields after each submit.
@@ -29,6 +36,14 @@ export function ContactForm() {
       <div role="status" className="rounded-2xl bg-mist p-6">
         <h3 className="text-xl font-bold">Message sent. Thank you!</h3>
         <p className="mt-2 text-muted">We&apos;ll get back to you as soon as we can, usually within one business day. For anything urgent, WhatsApp or call us.</p>
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+          <button type="button" onClick={onAnother} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-navy px-5 font-semibold text-white hover:bg-navy-soft">
+            Send another message
+          </button>
+          <Link href="/" className="inline-flex min-h-12 items-center justify-center rounded-xl border-2 border-navy px-5 font-semibold text-navy hover:bg-white">
+            Back to home
+          </Link>
+        </div>
       </div>
     );
   }
