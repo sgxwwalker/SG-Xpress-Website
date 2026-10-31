@@ -13,10 +13,12 @@ import { Inline } from "../Prose";
 import { AirRateTables } from "../RatesAir";
 import { ShippingCalculator } from "../ShippingCalculator";
 import { SocialLinks } from "../SocialLinks";
+import { YardSaleBrowser } from "../YardSaleBrowser";
 import { Button, H2, Section } from "../ui";
 import { FAQ_CATEGORY_LIST } from "@/lib/blocks/faq-categories";
 import { LinkButton, MaybeLink, muted, Picture, TextLink, type BlockProps } from "./shared";
 import { isJobOpen } from "@/lib/jobs";
+import { shownYardItems } from "@/lib/yard-sale";
 
 // The "Live information" sections: their numbers and lists come from the admin settings,
 // and their headings and labels from the page editor.
@@ -416,5 +418,26 @@ export function Jobs({ p, c, anchor, tone }: BlockProps<{ heading: string; empty
         </Section>
       ) : null}
     </>
+  );
+}
+
+export function YardSale({ p, c, anchor, tone }: BlockProps<{ heading: string; intro: string; buyLabel: string; note: string; emptyTitle: string; emptyText: string }>) {
+  const items = shownYardItems(c);
+  return (
+    <Section id={anchor} tone={tone}>
+      {p.heading ? <H2>{fill(p.heading, c)}</H2> : null}
+      {p.intro ? <p className={`mb-6 mt-2 ${muted(tone)}`}>{fill(p.intro, c)}</p> : <div className="mb-6" />}
+      {items.length ? (
+        <div className="text-navy">
+          <YardSaleBrowser items={items} whatsapp={c.contact.whatsapp} buyLabel={fill(p.buyLabel, c)} branches={c.branches.map((b) => b.name)} />
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-line bg-white p-6 text-navy md:p-8">
+          <h3 className="text-xl font-bold">{fill(p.emptyTitle, c) || "Nothing for sale right now"}</h3>
+          {p.emptyText ? <p className="mt-2 text-muted">{fill(p.emptyText, c)}</p> : null}
+        </div>
+      )}
+      {items.length && p.note ? <p className={`mt-6 text-sm ${muted(tone)}`}><Inline text={fill(p.note, c)} /></p> : null}
+    </Section>
   );
 }

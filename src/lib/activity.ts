@@ -60,6 +60,8 @@ const SECTION: Record<string, string> = {
   faqs: "FAQ",
   chinaWarehouses: "China address",
   socials: "Social link",
+  yardSale: "Yard Sale",
+  yardSaleSoldDays: "Yard Sale",
 };
 
 function words(key: string): string {

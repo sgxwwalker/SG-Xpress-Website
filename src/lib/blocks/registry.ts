@@ -401,6 +401,20 @@ export const BLOCKS = {
       { kind: "text", key: "moreButton", label: "Box under the jobs: button text", max: 60 },
     ],
   },
+  yardSale: {
+    name: "Yard Sale items",
+    description: "Items for sale from the Yard Sale admin page, with Buy on WhatsApp buttons.",
+    group: "Live information",
+    tone: "mist",
+    fields: [
+      heading,
+      { kind: "text", key: "intro", label: "Text above the items", multiline: true },
+      { kind: "text", key: "buyLabel", label: "Buy button text", max: 40 },
+      { kind: "text", key: "note", label: "Note under the items (e.g. how to pay and collect)", multiline: true },
+      { kind: "text", key: "emptyTitle", label: "No items: title", max: 100 },
+      { kind: "text", key: "emptyText", label: "No items: text", multiline: true },
+    ],
+  },
 } satisfies Record<string, BlockDef>;
 
 export type BlockType = keyof typeof BLOCKS;

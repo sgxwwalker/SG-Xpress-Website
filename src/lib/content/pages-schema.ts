@@ -14,6 +14,7 @@ export const BUILTIN_PAGES = [
   { id: "about", path: "/about", name: "About" },
   { id: "contact", path: "/contact", name: "Contact" },
   { id: "careers", path: "/careers", name: "Careers" },
+  { id: "yard-sale", path: "/yard-sale", name: "Yard Sale" },
   { id: "restricted-items", path: "/restricted-items", name: "Restricted items" },
   { id: "terms", path: "/terms", name: "Terms and conditions" },
   { id: "privacy", path: "/privacy", name: "Privacy" },

@@ -132,6 +132,8 @@ export const defaultContent: SiteContent = {
     { category: "Customs brokerage", featured: false, q: "How do I request a customs brokerage quotation?", a: "Send your shipment description, invoice, shipping documents, expected arrival date and contact details to info@sgxpressja.com, or contact 876-879-4816." },
   ],
   jobs: [],
+  yardSale: [],
+  yardSaleSoldDays: 3,
   chinaWarehouses: {
     air: [
       MARK,

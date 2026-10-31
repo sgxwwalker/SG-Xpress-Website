@@ -19,7 +19,7 @@ export function Header() {
             href={LOGIN_URL}
             data-track="login_click"
             data-track-location="header"
-            className="flex min-h-11 items-center px-2 text-sm font-semibold md:rounded-xl md:border-2 md:border-navy md:px-4"
+            className="flex min-h-11 items-center whitespace-nowrap px-2 text-sm font-semibold md:rounded-xl md:border-2 md:border-navy md:px-4"
           >
             Log in
           </a>

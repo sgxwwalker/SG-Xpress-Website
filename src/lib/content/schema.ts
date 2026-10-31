@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { FAQ_CATEGORY_LIST, JOB_TYPES } from "@/lib/blocks/faq-categories";
+import { imageSchema } from "@/lib/blocks/fields";
 import { defaultPages } from "./pages-default";
 import { pagesSchema } from "./pages-schema";
 
@@ -55,6 +56,27 @@ export const jobSchema = z.object({
   postedAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   open: z.boolean(),
 });
+
+export const YARD_CONDITIONS = ["New", "Like new", "Used", "For parts"] as const;
+export const YARD_STATUSES = ["draft", "available", "reserved", "sold"] as const;
+
+// Yard Sale: items customers didn't collect, sold "as is" and bought through WhatsApp.
+export const yardItemSchema = z.object({
+  id: z.string().regex(/^ys-[a-z0-9]{4,12}$/),
+  title: z.string().trim().min(2, "Yard Sale: give every item a name.").max(100, "Yard Sale: keep item names under 100 characters."),
+  description: z.string().trim().max(1000, "Yard Sale: keep descriptions under 1,000 characters."),
+  price: money,
+  wasPrice: money, // 0 = no "was" price
+  condition: z.enum(YARD_CONDITIONS),
+  category: z.string().trim().max(60, "Yard Sale: keep categories under 60 characters.").default(""), // e.g. Kitchen, Electronics
+  branch: z.string().trim().max(120),
+  images: z.array(imageSchema).max(6, "Yard Sale: up to 6 pictures per item."),
+  status: z.enum(YARD_STATUSES),
+  addedAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  soldAt: z.union([z.literal(""), z.string().regex(/^\d{4}-\d{2}-\d{2}$/)]).default(""), // set when marked Sold
+  watching: z.number().int().min(0).max(999).default(0), // "N people watching", set by staff; 0 = hidden
+});
+export type YardItem = z.infer<typeof yardItemSchema>;
 
 export const contentSchema = z.object({
   notice: z.object({
@@ -165,6 +187,9 @@ export const contentSchema = z.object({
     .max(50)
     .refine((list) => new Set(list.map((j) => j.id)).size === list.length, { message: "Two jobs have the same link. Change one of them." })
     .default([]),
+  yardSale: z.array(yardItemSchema).max(200, "Yard Sale: up to 200 items. Delete sold ones to make room.").default([]),
+  // Sold items stay on the Yard Sale page with a "Sold" badge for this many days (0 = hide straight away).
+  yardSaleSoldDays: z.number().int().min(0).max(60).default(3),
   chinaWarehouses: z.object({
     air: z.array(addressFieldSchema).min(1).max(12),
     sea: z.array(addressFieldSchema).min(1).max(12),

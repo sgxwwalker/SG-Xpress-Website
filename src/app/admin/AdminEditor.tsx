@@ -15,6 +15,7 @@ import { AccountPanel } from "./AccountPanel";
 import { ActivityPanel } from "./ActivityPanel";
 import { ApplicationsPanel } from "./ApplicationsPanel";
 import { StaffPanel } from "./StaffPanel";
+import { YardSalePanel } from "./_editor/YardSalePanel";
 import { Fold, Pager, useOpen, usePager } from "./_editor/ListTools";
 import { HistoryPanel, type VersionInfo } from "./_editor/HistoryPanel";
 import { MediaLibrary } from "./_editor/MediaLibrary";
@@ -22,8 +23,8 @@ import { PagesPanel } from "./_editor/PagesPanel";
 import type { LibraryImage } from "@/lib/media";
 import { deleteMessage, logout, save } from "./actions";
 
-type Tab = "messages" | "applications" | "pages" | "media" | "history" | "notice" | "air" | "fees" | "branches" | "faqs" | "china" | "careers" | "staff" | "activity" | "account";
-const CONTENT_TABS: Tab[] = ["pages", "notice", "air", "fees", "branches", "faqs", "china", "careers"];
+type Tab = "messages" | "applications" | "pages" | "media" | "history" | "notice" | "air" | "fees" | "branches" | "faqs" | "china" | "careers" | "yard-sale" | "staff" | "activity" | "account";
+const CONTENT_TABS: Tab[] = ["pages", "notice", "air", "fees", "branches", "faqs", "china", "careers", "yard-sale"];
 type Group = "Inbox" | "Website content" | "Admin" | "Account";
 const TABS: { id: Tab; label: string; group: Group; description: string; icon: React.ReactNode; superadminOnly?: boolean }[] = [
   { id: "messages", label: "Messages", group: "Inbox", icon: <IconMail className="h-5 w-5" />, description: "Messages sent from the Contact page, newest first." },
@@ -37,6 +38,7 @@ const TABS: { id: Tab; label: string; group: Group; description: string; icon: R
   { id: "faqs", label: "FAQs", group: "Website content", icon: <IconHelp className="h-5 w-5" />, description: "Questions on the FAQs page. Tick “Show on homepage” for up to six." },
   { id: "china", label: "China addresses", group: "Website content", icon: <IconGlobe className="h-5 w-5" />, description: "The Air, Sea and Dangerous goods warehouse addresses on the China Direct page." },
   { id: "careers", label: "Careers", group: "Website content", icon: <IconUsers className="h-5 w-5" />, description: "Job openings on the Careers page. Tick “Live” to publish a job; it closes by itself after its apply-by date." },
+  { id: "yard-sale", label: "Yard Sale", group: "Website content", icon: <IconTag className="h-5 w-5" />, description: "Items for sale on the Yard Sale page. Set an item to “For sale” to show it; customers buy on WhatsApp." },
   { id: "history", label: "Version history", group: "Admin", icon: <IconHistory className="h-5 w-5" />, description: "Earlier versions of the website content. Restore one if a change went wrong." },
   { id: "staff", label: "Staff", group: "Admin", icon: <IconUsers className="h-5 w-5" />, description: "Add staff, reset passwords and switch accounts off.", superadminOnly: true },
   { id: "activity", label: "Activity", group: "Admin", icon: <IconClock className="h-5 w-5" />, description: "Who logged in, what they changed and when.", superadminOnly: true },
@@ -734,6 +736,8 @@ export function AdminEditor({
             <Pager page={jobPager.page} pages={jobPager.pages} onChange={jobPager.setPage} total={c.jobs.length} perPage={10} label="jobs" />
           </>
         )}
+
+        {tab === "yard-sale" && <YardSalePanel c={c} edit={edit} images={images} setImages={setImages} />}
 
         {tab === "staff" && isSuper && <StaffPanel initial={staff} superadminUsername={user.username} />}
         {tab === "activity" && isSuper && <ActivityPanel entries={activity} />}

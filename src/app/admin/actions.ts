@@ -167,6 +167,8 @@ const SECTION_NAMES: Record<string, string> = {
   faqs: "FAQs",
   chinaWarehouses: "China addresses",
   jobs: "Careers",
+  yardSale: "Yard Sale",
+  yardSaleSoldDays: "Yard Sale",
   socials: "Social links",
 };
 
@@ -370,6 +372,7 @@ export async function deleteMediaItem(id: string, file: string): Promise<{ ok: t
   if (READ_ONLY) return { ok: false, error: READ_ONLY_MESSAGE };
   const c = await getContent();
   const usedOn = c.pages.filter((p) => JSON.stringify(p.sections).includes(`/media/${file}`)).map((p) => p.name);
+  for (const item of c.yardSale) if (item.images.some((i) => i.src === `/media/${file}`)) usedOn.push(`Yard Sale (${item.title})`);
   if (usedOn.length) return { ok: false, error: `This picture is still used on: ${usedOn.join(", ")}. Replace it there first, then delete it.` };
   const item = await removeMedia(String(id));
   if (!item) return { ok: false, error: "That picture was already deleted." };

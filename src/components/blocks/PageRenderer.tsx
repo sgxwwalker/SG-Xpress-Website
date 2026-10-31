@@ -4,7 +4,7 @@ import type { Page } from "@/lib/content/pages-schema";
 import { Banner, Cards, Cta, Faqs, Hero, ImageText, JumpLinks, Note, Picture1, Stats, Steps, Table, Text, Tiles } from "./basic";
 import {
   AirRates, AirScheduleBlock, BranchCardsBlock, BranchLinks, Calculator, ChinaAddressesBlock, ChinaOptions, ChinaRates,
-  ContactPanel, FaqExplorerBlock, FeesTables, HelpContacts, Jobs, OceanRates, WarehouseHoursBlock,
+  ContactPanel, FaqExplorerBlock, FeesTables, HelpContacts, Jobs, OceanRates, WarehouseHoursBlock, YardSale,
 } from "./live";
 import type { BlockProps } from "./shared";
 
@@ -42,6 +42,7 @@ const RENDER: Record<BlockType, (props: BlockProps<any>) => React.ReactNode> = {
   helpContacts: HelpContacts,
   contactPanel: ContactPanel,
   jobs: Jobs,
+  yardSale: YardSale,
 };
 
 export function PageRenderer({ page, content }: { page: Page; content: SiteContent }) {

@@ -247,6 +247,22 @@ export function defaultPages(): Page[] {
       }, { anchor: "openings" }],
     ]),
 
+    builtin("yard-sale", "Yard Sale", "Yard Sale, Bargains in Jamaica", "Bargains on items that were never collected. See photos, prices and condition, and buy on WhatsApp. Pay and collect at an SG Xpress branch.", [
+      ["hero", {
+        heading: "Yard Sale",
+        highlight: "bargains",
+        text: "Message us on WhatsApp to buy, then pay and collect at the branch.",
+      }],
+      ["yardSale", {
+        heading: "For sale now",
+        intro: "New items are added often. Each item is one of a kind, so first to confirm gets it.",
+        buyLabel: "Buy on WhatsApp",
+        note: "Items are sold as is. Pay and collect at the branch shown on each item.",
+        emptyTitle: "Nothing for sale right now",
+        emptyText: "Check back soon. New items are added often.",
+      }, { anchor: "items" }],
+    ]),
+
     builtin("restricted-items", "Restricted items", "Restricted Items for Import into Jamaica", "Items that need a permit to import into Jamaica, and which agency issues it.", [
       ["hero", { heading: "Restricted items", text: "These items need a permit before they can be imported into Jamaica. Shipping them without one can lead to delays, detention or fines." }],
       ["text", {
