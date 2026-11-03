@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import type { ImageValue } from "@/lib/blocks/fields";
-import { YARD_CONDITIONS, YARD_STATUSES, type SiteContent, type YardItem } from "@/lib/content/schema";
+import { YARD_CATEGORIES, YARD_CONDITIONS, YARD_STATUSES, type SiteContent, type YardItem } from "@/lib/content/schema";
 import type { LibraryImage } from "@/lib/media";
 import { jmd } from "@/lib/rates";
 import { MediaPicker } from "./MediaLibrary";
@@ -132,9 +132,6 @@ export function YardSalePanel({ c, edit, images, setImages }: { c: SiteContent; 
         <p className={`${card} text-sm text-muted`}>No items yet. Add one, give it photos and a price, set it to “For sale”, then click Save and publish.</p>
       )}
 
-      <datalist id="ys-categories">
-        {[...new Set(c.yardSale.map((x) => x.category).filter(Boolean))].sort().map((x) => <option key={x} value={x} />)}
-      </datalist>
       <Pager page={pager.page} pages={pager.pages} onChange={pager.setPage} total={list.length} perPage={10} label="items" />
       {pager.items.map(({ item, index: i }) => {
         const st = STATUS_TEXT[item.status];
@@ -168,8 +165,12 @@ export function YardSalePanel({ c, edit, images, setImages }: { c: SiteContent; 
                   {YARD_CONDITIONS.map((x) => <option key={x}>{x}</option>)}
                 </select>
               </Field>
-              <Field label="Category (optional)" hint="e.g. Kitchen, Electronics, Clothing. Customers can filter by it.">
-                <input className={input} maxLength={60} list="ys-categories" value={item.category} onChange={(e) => edit((d) => { d.yardSale[i].category = e.target.value; })} />
+              <Field label="Category" hint="Customers can tap a category at the top of the Yard Sale page to see only those items.">
+                <select className={input} value={item.category} onChange={(e) => edit((d) => { d.yardSale[i].category = e.target.value; })}>
+                  <option value="">No category</option>
+                  {YARD_CATEGORIES.map((x) => <option key={x}>{x}</option>)}
+                  {item.category && !(YARD_CATEGORIES as readonly string[]).includes(item.category) ? <option>{item.category}</option> : null}
+                </select>
               </Field>
               <Field label="Price (J$)"><Money label="Price in J$" value={item.price} onChange={(n) => edit((d) => { d.yardSale[i].price = n; })} /></Field>
               <Field label="Was price (J$, optional)" hint="Shown crossed out when higher than the price. Leave 0 for none.">

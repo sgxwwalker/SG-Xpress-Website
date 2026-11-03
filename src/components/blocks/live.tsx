@@ -426,7 +426,7 @@ export function YardSale({ p, c, anchor, tone }: BlockProps<{ heading: string; i
   return (
     <Section id={anchor} tone={tone}>
       {p.heading ? <H2>{fill(p.heading, c)}</H2> : null}
-      {p.intro ? <p className={`mb-6 mt-2 ${muted(tone)}`}>{fill(p.intro, c)}</p> : <div className="mb-6" />}
+      {p.intro ? <p className={`mb-6 mt-2 ${muted(tone)}`}>{fill(p.intro, c)}</p> : p.heading ? <div className="mb-6" /> : null}
       {items.length ? (
         <div className="text-navy">
           <YardSaleBrowser items={items} whatsapp={c.contact.whatsapp} buyLabel={fill(p.buyLabel, c)} branches={c.branches.map((b) => b.name)} />

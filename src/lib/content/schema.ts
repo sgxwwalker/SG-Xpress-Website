@@ -59,6 +59,18 @@ export const jobSchema = z.object({
 
 export const YARD_CONDITIONS = ["New", "Like new", "Used", "For parts"] as const;
 export const YARD_STATUSES = ["draft", "available", "reserved", "sold"] as const;
+// The category buttons along the top of the Yard Sale page, in this order.
+export const YARD_CATEGORIES = [
+  "Motors",
+  "Electronics",
+  "Collectibles",
+  "Home and garden",
+  "Clothing, shoes and accessories",
+  "Toys",
+  "Sporting goods",
+  "Business and industrial",
+  "Jewelry and watches",
+] as const;
 
 // Yard Sale: items customers didn't collect, sold "as is" and bought through WhatsApp.
 export const yardItemSchema = z.object({

@@ -254,8 +254,8 @@ export function defaultPages(): Page[] {
         text: "Message us on WhatsApp to buy, then pay and collect at the branch.",
       }],
       ["yardSale", {
-        heading: "For sale now",
-        intro: "New items are added often. Each item is one of a kind, so first to confirm gets it.",
+        heading: "",
+        intro: "",
         buyLabel: "Buy on WhatsApp",
         note: "Items are sold as is. Pay and collect at the branch shown on each item.",
         emptyTitle: "Nothing for sale right now",

@@ -2,10 +2,19 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
-import type { YardItem } from "@/lib/content/schema";
+import { YARD_CATEGORIES, type YardItem } from "@/lib/content/schema";
 import { jmd } from "@/lib/rates";
 import { whatsappUrl } from "@/lib/site";
 import { IconChat, IconClose } from "./Icons";
+
+function IconSearch({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" aria-hidden="true" className={className}>
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+    </svg>
+  );
+}
 
 function IconEye({ className }: { className?: string }) {
   return (
@@ -135,7 +144,8 @@ export function YardSaleBrowser({ items, whatsapp, buyLabel, branches }: { items
   const total = cart.reduce((sum, i) => sum + i.price, 0);
   const inCart = (id: string) => cart.some((i) => i.id === id);
 
-  const categories = [...new Set(items.map((i) => i.category).filter(Boolean))].sort();
+  // The standard categories always show; any older custom ones in use are added after them.
+  const categories: string[] = [...YARD_CATEGORIES, ...[...new Set(items.map((i) => i.category))].filter((x) => x && !(YARD_CATEGORIES as readonly string[]).includes(x)).sort()];
   const conditions = [...new Set(items.map((i) => i.condition))];
   const usedBranches = branches.filter((b) => items.some((i) => i.branch === b));
 
@@ -175,23 +185,66 @@ export function YardSaleBrowser({ items, whatsapp, buyLabel, branches }: { items
   return (
     <div className="flex flex-col gap-5">
       {/* Search, filters and sorting */}
+      <form
+        role="search"
+        className="flex items-stretch gap-2 sm:gap-3"
+        onSubmit={(e) => {
+          // Results already update as you type; Search closes the phone keyboard and jumps to them.
+          e.preventDefault();
+          (document.activeElement as HTMLElement | null)?.blur();
+          document.getElementById("ys-results")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }}
+      >
+        <div className="flex h-14 min-w-0 flex-1 items-center rounded-full border-2 border-navy bg-white focus-within:ring-2 focus-within:ring-navy/30">
+          <IconSearch className="ml-4 h-5 w-5 flex-none text-muted" />
+          <label className="sr-only" htmlFor="ys-search">Search the Yard Sale</label>
+          <input
+            id="ys-search"
+            type="search"
+            value={q}
+            onChange={(e) => {
+              const v = e.target.value;
+              reset(setQ)(v);
+              // The condition and sort boxes only show while searching, so clearing the search resets them.
+              if (!v.trim()) { setCondition(""); setBranch(""); setSort("newest"); }
+            }}
+            placeholder="Search for anything"
+            className="h-full min-w-0 flex-1 bg-transparent px-3 text-base focus:outline-none"
+          />
+          <span className="hidden h-8 w-px flex-none bg-line md:block" aria-hidden="true" />
+          <select
+            aria-label="Category"
+            value={category}
+            onChange={(e) => reset(setCategory)(e.target.value)}
+            className="hidden h-full w-52 flex-none cursor-pointer rounded-r-full bg-transparent pl-4 pr-3 text-sm font-semibold focus:outline-none md:block"
+          >
+            <option value="">All categories</option>
+            {categories.map((x) => <option key={x}>{x}</option>)}
+          </select>
+        </div>
+        <button type="submit" className="h-14 flex-none rounded-full bg-navy px-5 font-bold text-white hover:bg-navy-soft sm:px-10">
+          Search
+        </button>
+      </form>
+
       <div className="flex flex-col gap-3 rounded-2xl border border-line bg-white p-4">
-        <label className="sr-only" htmlFor="ys-search">Search the Yard Sale</label>
-        <input
-          id="ys-search"
-          type="search"
-          value={q}
-          onChange={(e) => reset(setQ)(e.target.value)}
-          placeholder="Search items, e.g. blender"
-          className="h-12 w-full rounded-xl border-2 border-line px-4 text-base focus:border-navy focus:outline-none"
-        />
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          {categories.length ? (
-            <select aria-label="Category" className={select} value={category} onChange={(e) => reset(setCategory)(e.target.value)}>
-              <option value="">All categories</option>
-              {categories.map((x) => <option key={x}>{x}</option>)}
-            </select>
-          ) : null}
+        <div role="group" aria-label="Categories" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
+          {["", ...categories].map((x) => {
+            const on = category === x;
+            return (
+              <button
+                key={x || "all"}
+                type="button"
+                aria-pressed={on}
+                onClick={() => reset(setCategory)(x)}
+                className={`min-h-10 flex-none whitespace-nowrap rounded-full border-2 px-4 text-sm font-semibold ${on ? "border-navy bg-navy text-white" : "border-line bg-white hover:border-navy"}`}
+              >
+                {x || "All items"}
+              </button>
+            );
+          })}
+        </div>
+        {q.trim() ? <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
           <select aria-label="Condition" className={select} value={condition} onChange={(e) => reset(setCondition)(e.target.value)}>
             <option value="">Any condition</option>
             {conditions.map((x) => <option key={x}>{x}</option>)}
@@ -207,25 +260,24 @@ export function YardSaleBrowser({ items, whatsapp, buyLabel, branches }: { items
             <option value="price-asc">Price: low to high</option>
             <option value="price-desc">Price: high to low</option>
           </select>
-        </div>
-        <p className="flex flex-wrap items-center gap-x-3 text-sm text-muted" aria-live="polite">
-          {shown.length} item{shown.length === 1 ? "" : "s"}
-          {filtering ? (
+        </div> : null}
+        {filtering ? (
+          <p className="text-sm">
             <button
               type="button"
               className="font-semibold text-navy underline underline-offset-2"
-              onClick={() => { setQ(""); setCategory(""); setCondition(""); setBranch(""); setPage(1); }}
+              onClick={() => { setQ(""); setCategory(""); setCondition(""); setBranch(""); setSort("newest"); setPage(1); }}
             >
               Clear filters
             </button>
-          ) : null}
-        </p>
+          </p>
+        ) : null}
       </div>
 
       {notice ? <p role="alert" className="rounded-xl bg-gold-soft px-4 py-3 text-sm font-medium">{notice}</p> : null}
 
       {shown.length ? (
-        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <ul id="ys-results" className="scroll-mt-24 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {visible.map((item) => {
             const single = `Hi SG Xpress, I'd like to buy this Yard Sale item: ${item.title} (${jmd(item.price)}, ref ${ref(item)}). Is it still available?`;
             return (
@@ -281,7 +333,9 @@ export function YardSaleBrowser({ items, whatsapp, buyLabel, branches }: { items
           })}
         </ul>
       ) : (
-        <p className="rounded-2xl border border-line bg-white p-6 text-center">No items match your search. Try other words or clear the filters.</p>
+        <p id="ys-results" className="scroll-mt-24 rounded-2xl border border-line bg-white p-6 text-center">
+          {category && !q && !condition && !branch ? `Nothing in ${category} right now. New items are added often, so check back soon.` : "No items match your search. Try other words or clear the filters."}
+        </p>
       )}
 
       {pages > 1 ? (
