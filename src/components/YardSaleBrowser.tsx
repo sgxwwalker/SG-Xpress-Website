@@ -35,6 +35,15 @@ const CART_KEY = "sgx-yard-cart";
 
 type Sort = "newest" | "price-asc" | "price-desc";
 
+// Shorter words for the category row, so every category fits on one line.
+const SHORT_CATEGORY: Record<string, string> = {
+  "Home and garden": "Home & Garden",
+  "Clothing, shoes and accessories": "Fashion",
+  "Sporting goods": "Sports",
+  "Business and industrial": "Business",
+  "Jewelry and watches": "Jewelry",
+};
+
 const ref = (item: YardItem) => item.id.toUpperCase();
 const isMedia = (src: string) => src.startsWith("/media/");
 
@@ -227,8 +236,9 @@ export function YardSaleBrowser({ items, whatsapp, buyLabel, branches }: { items
         </button>
       </form>
 
-      <div className="flex flex-col gap-3 rounded-2xl border border-line bg-white p-4">
-        <div role="group" aria-label="Categories" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
+      <div className="flex flex-col gap-3">
+        {/* One plain row of words. It fits on a computer; on a phone it slides sideways. */}
+        <div role="group" aria-label="Categories" className="mx-auto flex w-fit max-w-full gap-5 overflow-x-auto [scrollbar-width:none] md:gap-7 [&::-webkit-scrollbar]:hidden">
           {["", ...categories].map((x) => {
             const on = category === x;
             return (
@@ -236,10 +246,11 @@ export function YardSaleBrowser({ items, whatsapp, buyLabel, branches }: { items
                 key={x || "all"}
                 type="button"
                 aria-pressed={on}
+                title={x || undefined}
                 onClick={() => reset(setCategory)(x)}
-                className={`min-h-10 flex-none whitespace-nowrap rounded-full border-2 px-4 text-sm font-semibold ${on ? "border-navy bg-navy text-white" : "border-line bg-white hover:border-navy"}`}
+                className={`min-h-11 flex-none whitespace-nowrap border-b-2 text-sm font-semibold ${on ? "border-navy text-navy" : "border-transparent text-muted hover:text-navy"}`}
               >
-                {x || "All items"}
+                {x ? (SHORT_CATEGORY[x] ?? x) : "All"}
               </button>
             );
           })}

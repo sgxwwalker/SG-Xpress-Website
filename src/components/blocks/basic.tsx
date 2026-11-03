@@ -14,7 +14,7 @@ type Item = { text: string };
 // ---- Page banner ----
 export function Hero({ p, c, id, anchor, first }: BlockProps<{
   eyebrow: string; heading: string; highlight: string; text: string; buttons: ButtonValue[]; checks: Item[];
-  image: ImageValue; hideImageOnPhone: boolean; style: "standard" | "large" | "centered";
+  image: ImageValue; hideImageOnPhone: boolean; style: "standard" | "large" | "centered" | "center";
 }>) {
   const heading = (
     <>
@@ -43,6 +43,21 @@ export function Hero({ p, c, id, anchor, first }: BlockProps<{
           <span aria-hidden="true" className="mx-auto mt-4 block h-1 w-20 rounded-full bg-gold" />
           {p.text ? <p className="mx-auto mt-4 max-w-xl text-on-navy">{fill(p.text, c)}</p> : null}
           {lead ? <div className="mx-auto mt-6 flex justify-center">{buttons}</div> : null}
+        </div>
+      </section>
+    );
+  }
+
+  if (p.style === "center") {
+    return (
+      <section id={anchor} className="bg-navy text-white">
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-5 px-4 py-8 text-center md:px-6 md:py-14">
+          <div>
+            {p.eyebrow ? <p className="mb-2 text-sm font-semibold text-on-navy">{fill(p.eyebrow, c)}</p> : null}
+            <h1 className="text-[31px] font-extrabold leading-tight md:text-5xl">{heading}</h1>
+          </div>
+          {p.text ? <p className="max-w-2xl text-lg text-on-navy">{fill(p.text, c)}</p> : null}
+          {lead ? <div className="w-full sm:flex sm:justify-center">{buttons}</div> : null}
         </div>
       </section>
     );
@@ -334,7 +349,7 @@ export function Table({ p, c, anchor, tone }: BlockProps<{ heading: string; col1
 export function JumpLinks({ p, anchor }: BlockProps<{ items: { label: string; anchor: string }[] }>) {
   return (
     <nav id={anchor} aria-label="On this page" className="sticky top-16 z-30 border-b border-line bg-white md:top-20">
-      <ul className="mx-auto flex max-w-6xl gap-2 overflow-x-auto px-4 py-2.5 md:px-6">
+      <ul className="mx-auto flex w-fit max-w-full gap-2 overflow-x-auto px-4 py-2.5 md:px-6">
         {p.items.map((j, i) => (
           <li key={i} className="flex-none">
             <a href={`#${j.anchor.replace(/^#/, "")}`} className="flex h-10 items-center rounded-full border border-line px-4 text-sm font-semibold hover:bg-mist">{j.label}</a>

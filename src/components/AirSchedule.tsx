@@ -70,7 +70,7 @@ const isClosed = (hours: string) => hours.trim().toLowerCase() === "closed";
 export function WarehouseHours({ content }: { content: Content }) {
   return (
     <div className="flex flex-col gap-4">
-      <p>Our Florida warehouse accepts deliveries during these hours, Florida local time.</p>
+      <p className="text-center">Our Florida warehouse accepts deliveries during these hours, Florida local time.</p>
       {/* Days across the top on larger screens */}
       <div className="hidden overflow-hidden rounded-2xl border border-line md:block">
         <table className="w-full table-fixed text-left">

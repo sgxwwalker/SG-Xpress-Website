@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   ...(STAGING ? { robots: { index: false, follow: false } } : {}),
   title: {
-    default: "Courier & Shipping to Jamaica from USA & China | SG Xpress",
+    default: "Shipping to Jamaica from USA & China | SG Xpress",
     template: "%s | SG Xpress",
   },
   description:

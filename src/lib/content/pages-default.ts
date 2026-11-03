@@ -22,7 +22,7 @@ const card = (p: Record<string, unknown>) => ({ showIcon: true, ...p });
 
 export function defaultPages(): Page[] {
   return [
-    builtin("home", "Home", "Courier & Shipping to Jamaica from USA & China", "Free US address, air from the USA three times a week, ocean freight, China Direct and barrels. Pick up at our branches or get islandwide delivery.", [
+    builtin("home", "Home", "Shipping to Jamaica from USA & China", "Free US address, air from the USA three times a week, ocean freight, China Direct and barrels. Pick up at our branches or get islandwide delivery.", [
       ["hero", {
         style: "large",
         heading: "Ship from the USA and China to Jamaica",
@@ -72,7 +72,7 @@ export function defaultPages(): Page[] {
     ]),
 
     builtin("rates", "Rates", "Air & Ocean Shipping Rates to Jamaica", "USA Air rates by weight, processing fees, USA Ocean, China Direct and barrel shipping prices in Jamaican dollars.", [
-      ["hero", { heading: "Shipping rates", buttons: [btn("Estimate your cost →", page("/calculator"), "gold")] }],
+      ["hero", { style: "center", heading: "Shipping Rates", text: "Now shipping 3x a week!" }],
       ["jumpLinks", { items: [
         { label: "USA Air", anchor: "air" }, { label: "Fees", anchor: "fees" }, { label: "USA Ocean", anchor: "ocean" }, { label: "China", anchor: "china" }, { label: "Barrels", anchor: "barrels" },
       ] }],
@@ -114,7 +114,7 @@ export function defaultPages(): Page[] {
     ]),
 
     builtin("calculator", "Calculator", "Shipping Cost Calculator, USA & China to Jamaica", "Know the cost before you ship. Estimate USA or China air and ocean shipping to Jamaica, with shipping, fees and service charge shown separately.", [
-      ["hero", { eyebrow: "Shipping cost calculator", heading: "Know the cost before you ship.", text: "Enter a weight or a volume and we'll break it down for you: shipping, fees and service charge." }],
+      ["hero", { style: "center", eyebrow: "Shipping cost calculator", heading: "Know the cost before you ship.", text: "Enter a weight or a volume and we'll break it down for you: shipping, fees and service charge." }],
       ["calculator", {
         buttons: [btn("Sign up free", REGISTER, "gold"), btn("Full rate sheet", page("/rates"), "outline")],
         footnote: "Shipping something bigger or a barrel? [Ask us for a quote](/contact).",
@@ -177,7 +177,7 @@ export function defaultPages(): Page[] {
     ]),
 
     builtin("about", "About", "About Us, Courier & Freight in Jamaica", "SG Xpress Shipping offers express courier, freight forwarding, and air and ocean cargo, with delivery islandwide.", [
-      ["hero", { heading: "Shipping built around you", text: "SG Xpress Shipping offers express courier, freight forwarding, and air and ocean cargo, with delivery islandwide." }],
+      ["hero", { style: "center", heading: "Shipping built around you", text: "SG Xpress Shipping offers express courier, freight forwarding, and air and ocean cargo, with delivery islandwide." }],
       ["cards", {
         heading: "From the store to your door",
         columns: "4",
@@ -247,8 +247,9 @@ export function defaultPages(): Page[] {
       }, { anchor: "openings" }],
     ]),
 
-    builtin("yard-sale", "Yard Sale", "Yard Sale, Bargains in Jamaica", "Bargains on items that were never collected. See photos, prices and condition, and buy on WhatsApp. Pay and collect at an SG Xpress branch.", [
+    builtin("yard-sale", "Yard Sale", "Yard Sale, Bargains in Jamaica", "Bargains in Jamaica. See photos, prices and condition, and buy on WhatsApp. Pay and collect at an SG Xpress branch.", [
       ["hero", {
+        style: "center",
         heading: "Yard Sale",
         highlight: "bargains",
         text: "Message us on WhatsApp to buy, then pay and collect at the branch.",
@@ -304,12 +305,12 @@ export function defaultPages(): Page[] {
       }],
     ]),
 
-    builtin("terms", "Terms and conditions", "Terms and conditions", "Terms and conditions for shipping with SG Xpress Jamaica Limited: invoices, customs, storage, claims and more.", [
+    builtin("terms", "Terms and conditions", "Shipping Terms and Conditions", "Terms and conditions for shipping with SG Xpress Jamaica Limited: invoices, customs, storage, claims and more.", [
       ["hero", { heading: "Terms and conditions", text: "Terms and conditions of SG Xpress Jamaica Limited™." }],
       ["text", { body: TERMS_MD }],
     ]),
 
-    builtin("privacy", "Privacy", "Privacy", "What personal information SG Xpress collects, how we use and share it, and your rights under Jamaica's Data Protection Act.", [
+    builtin("privacy", "Privacy", "Privacy Policy", "What personal information SG Xpress collects, how we use and share it, and your rights under Jamaica's Data Protection Act.", [
       ["hero", { heading: "Privacy", text: `How we handle your personal information. Last updated ${PRIVACY_LAST_UPDATED}.` }],
       ["text", { body: `${PRIVACY_MD.trim()}\n\nSee also our full [terms and conditions](/terms).` }],
     ]),

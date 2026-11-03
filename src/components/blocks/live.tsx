@@ -35,8 +35,8 @@ function formatWa(n: string): string {
 export function AirRates({ p, c, anchor, tone }: BlockProps<{ heading: string; text: string }>) {
   return (
     <Section id={anchor} tone={tone}>
-      {p.heading ? <H2>{fill(p.heading, c)}</H2> : null}
-      {p.text ? <p className={`mt-2 ${muted(tone)}`}>{fill(p.text, c)}</p> : null}
+      {p.heading ? <H2 className="text-center">{fill(p.heading, c)}</H2> : null}
+      {p.text ? <p className={`mt-2 text-center ${muted(tone)}`}>{fill(p.text, c)}</p> : null}
       <AirRateTables airRates={c.airRates} />
     </Section>
   );
@@ -51,7 +51,7 @@ export function FeesTables({ p, c, anchor, tone }: BlockProps<Record<"heading" |
   );
   return (
     <Section id={anchor} tone={tone}>
-      {p.heading ? <H2>{fill(p.heading, c)}</H2> : null}
+      {p.heading ? <H2 className="text-center">{fill(p.heading, c)}</H2> : null}
       <div className="mt-6 grid gap-8 md:grid-cols-2">
         <table className="w-full">
           <caption className="pb-2 text-left font-semibold">{fill(p.processingCaption, c)}</caption>
@@ -76,9 +76,9 @@ export function FeesTables({ p, c, anchor, tone }: BlockProps<Record<"heading" |
 export function OceanRates({ p, c, id, anchor, tone }: BlockProps<{ heading: string; text: string; cuftLabel: string; smallLabel: string; after: string; buttons: ButtonValue[] }>) {
   return (
     <Section id={anchor} tone={tone}>
-      {p.heading ? <H2>{fill(p.heading, c)}</H2> : null}
-      {p.text ? <p className={`mt-2 ${muted(tone)}`}>{fill(p.text, c)}</p> : null}
-      <div className="mt-6 grid grid-cols-2 gap-3 text-navy sm:max-w-lg">
+      {p.heading ? <H2 className="text-center">{fill(p.heading, c)}</H2> : null}
+      {p.text ? <p className={`mt-2 text-center ${muted(tone)}`}>{fill(p.text, c)}</p> : null}
+      <div className="mx-auto mt-6 grid grid-cols-2 gap-3 text-center text-navy sm:max-w-lg">
         <div className="rounded-2xl border border-line bg-white p-4">
           <p className="text-sm text-muted">{fill(p.cuftLabel, c)}</p>
           <p className="text-3xl font-extrabold">{usd(c.ocean.perCubicFootUsd)}</p>
@@ -88,8 +88,12 @@ export function OceanRates({ p, c, id, anchor, tone }: BlockProps<{ heading: str
           <p className="text-3xl font-extrabold">{jmd(c.ocean.smallPerLb)}<span className="text-sm font-medium"> /lb</span></p>
         </div>
       </div>
-      {p.after ? <p className="mt-4"><Inline text={fill(p.after, c)} /></p> : null}
-      {p.buttons.map((b, i) => <LinkButton key={i} b={b} c={c} where={id} className="mt-4 w-full sm:w-auto" />)}
+      {p.after ? <p className="mt-4 text-center"><Inline text={fill(p.after, c)} /></p> : null}
+      {p.buttons.length ? (
+        <div className="flex flex-col items-center">
+          {p.buttons.map((b, i) => <LinkButton key={i} b={b} c={c} where={id} className="mt-4 w-full sm:w-auto" />)}
+        </div>
+      ) : null}
     </Section>
   );
 }
@@ -97,10 +101,10 @@ export function OceanRates({ p, c, id, anchor, tone }: BlockProps<{ heading: str
 export function ChinaRates({ p, c, id, anchor, tone }: BlockProps<{ heading: string; airExtra: string; seaExtra: string; note: string; buttons: ButtonValue[]; image: ImageValue; imageLink: LinkValue }>) {
   return (
     <Section id={anchor} tone={tone}>
+      {p.heading ? <H2 className="mb-6 text-center">{fill(p.heading, c)}</H2> : null}
       <div className={`grid items-center gap-8 ${p.image.src ? "lg:grid-cols-[1fr_400px]" : ""}`}>
         <div>
-          {p.heading ? <H2>{fill(p.heading, c)}</H2> : null}
-          <table className="mt-6 w-full sm:max-w-xl">
+          <table className="w-full sm:max-w-xl">
             <thead>
               <tr className="border-b-2 border-navy text-sm">
                 <td />

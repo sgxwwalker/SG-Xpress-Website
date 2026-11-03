@@ -43,6 +43,7 @@ export const BLOCKS = {
         { value: "standard", label: "Standard" },
         { value: "large", label: "Large heading" },
         { value: "centered", label: "Centred, capital letters" },
+        { value: "center", label: "Centred" },
       ] },
     ],
   },

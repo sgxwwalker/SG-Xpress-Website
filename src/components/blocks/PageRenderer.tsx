@@ -45,10 +45,13 @@ const RENDER: Record<BlockType, (props: BlockProps<any>) => React.ReactNode> = {
   yardSale: YardSale,
 };
 
+// Pages whose section titles (and the line straight under each title) are centred.
+const CENTRED_TITLE_PAGES = ["about"];
+
 export function PageRenderer({ page, content }: { page: Page; content: SiteContent }) {
   const visible = page.sections.filter((s) => !s.hidden);
   return (
-    <>
+    <div className={CENTRED_TITLE_PAGES.includes(page.id) ? "[&_h2]:text-center [&_h2+p]:text-center" : undefined}>
       {visible.map((s, i) => {
         const Block = RENDER[s.type];
         if (!Block) return null;
@@ -64,6 +67,6 @@ export function PageRenderer({ page, content }: { page: Page; content: SiteConte
           />
         );
       })}
-    </>
+    </div>
   );
 }

@@ -1,10 +1,21 @@
 import Link from "next/link";
 import { isBuiltin, type Page } from "@/lib/content/pages-schema";
 import type { SiteContent } from "@/lib/content/schema";
-import { NAV, telHref } from "@/lib/site";
+import { telHref } from "@/lib/site";
 import { SocialLinks } from "./SocialLinks";
 
+const COMPANY = [
+  { href: "/about", label: "About" },
+  { href: "/china-direct", label: "China Direct" },
+  { href: "/yard-sale", label: "Yard Sale" },
+  { href: "/contact", label: "Contact" },
+  { href: "/careers", label: "Careers" },
+];
+
 const HELP = [
+  { href: "/faqs", label: "FAQs" },
+  { href: "/rates", label: "Rates" },
+  { href: "/calculator", label: "Calculator" },
   { href: "/restricted-items", label: "Restricted items" },
   { href: "/privacy", label: "Privacy" },
   { href: "/terms", label: "Terms" },
@@ -21,7 +32,7 @@ export function Footer({ content }: { content: SiteContent }) {
         <nav aria-label="Company">
           <h2 className="mb-2 text-sm font-semibold uppercase tracking-wider text-gold">Company</h2>
           <ul>
-            {[...NAV.slice(1), { href: "/careers", label: "Careers" }].map((l) => (
+            {COMPANY.map((l) => (
               <li key={l.href}>
                 <Link href={l.href} className="flex min-h-10 items-center text-white hover:underline">{l.label}</Link>
               </li>
