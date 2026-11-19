@@ -42,7 +42,7 @@ export function AirRates({ p, c, anchor, tone }: BlockProps<{ heading: string; t
   );
 }
 
-export function FeesTables({ p, c, anchor, tone }: BlockProps<Record<"heading" | "processingCaption" | "underLabel" | "overLabel" | "otherCaption" | "lateLabel" | "storageLabel" | "note", string>>) {
+export function FeesTables({ p, c, anchor, tone }: BlockProps<Record<"heading" | "processingCaption" | "underLabel" | "overLabel" | "otherCaption" | "lateLabel" | "storageLabel" | "serviceLabel" | "note", string>>) {
   const row = (label: string, value: string) => (
     <tr key={label}>
       <th scope="row" className="py-3 pr-4 text-left font-normal">{fill(label, c)}</th>
@@ -65,6 +65,7 @@ export function FeesTables({ p, c, anchor, tone }: BlockProps<Record<"heading" |
           <tbody className="divide-y divide-line border-y border-line">
             {row(p.lateLabel, jmd(c.fees.lateInvoice))}
             {row(p.storageLabel, `${jmd(c.fees.storagePerDay)} / day`)}
+            {p.serviceLabel ? row(p.serviceLabel, "") : null}
           </tbody>
         </table>
       </div>

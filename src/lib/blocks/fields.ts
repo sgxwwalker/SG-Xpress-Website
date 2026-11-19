@@ -18,7 +18,8 @@ export type ImageValue = { src: string; alt: string; width: number; height: numb
 
 type Base = { key: string; label: string; hint?: string };
 export type FieldSpec =
-  | (Base & { kind: "text"; max?: number; multiline?: boolean; placeholder?: string })
+  // `fallback` fills in pages saved before this field existed.
+  | (Base & { kind: "text"; max?: number; multiline?: boolean; placeholder?: string; fallback?: string })
   | (Base & { kind: "markdown"; max?: number; rows?: number })
   | (Base & { kind: "number"; min?: number; max?: number })
   | (Base & { kind: "toggle" })
@@ -64,8 +65,10 @@ export const imageSchema = z.object({
 
 export function fieldSchema(f: FieldSpec): z.ZodType {
   switch (f.kind) {
-    case "text":
-      return z.string().max(f.max ?? (f.multiline ? 1500 : 300), `${f.label}: too long.`);
+    case "text": {
+      const s = z.string().max(f.max ?? (f.multiline ? 1500 : 300), `${f.label}: too long.`);
+      return f.fallback === undefined ? s : s.default(f.fallback);
+    }
     case "markdown":
       return z.string().max(f.max ?? 80000, `${f.label}: too long.`);
     case "number":

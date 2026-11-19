@@ -21,6 +21,9 @@ export const TOKENS: { token: string; label: string; value: (c: SiteContent) => 
   { token: "{auction days}", label: "Days before auction", value: (c) => String(c.fees.auctionDays) },
   { token: "{processing fee under 10}", label: "Processing fee under 10 lb", value: (c) => jmd(c.processingFees.under10) },
   { token: "{processing fee 10 plus}", label: "Processing fee 10 lb and over", value: (c) => jmd(c.processingFees.from10) },
+  { token: "{service charge percent}", label: "Service charge % (USA air)", value: (c) => `${c.serviceCharge.percent}%` },
+  { token: "{service charge ocean percent}", label: "Service charge % (USA ocean)", value: (c) => `${c.serviceCharge.oceanPercent}%` },
+  { token: "{service charge limit}", label: "Value above which the service charge applies (US$)", value: (c) => `US$${c.serviceCharge.thresholdUsd}` },
   { token: "{email}", label: "Main email address", value: (c) => c.contact.email },
 ];
 

@@ -85,6 +85,7 @@ export function defaultPages(): Page[] {
         otherCaption: "Other charges",
         lateLabel: "Late invoice (after clearance day)",
         storageLabel: "Storage (first {storage free days} days free)",
+        serviceLabel: "Service charge applies to item or invoice total valued over {service charge limit}",
         note: "Packages not collected within {auction days} days are auctioned to cover costs.",
       }, { anchor: "fees" }],
       ["oceanRates", {
