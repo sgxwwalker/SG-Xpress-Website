@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Third-party Claude skills, not site code:
     ".claude/**",
+    // Server/hosting scripts (plain Node), not site code:
+    "deploy/**",
   ]),
 ]);
 
